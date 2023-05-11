@@ -1,0 +1,70 @@
+package main
+
+import (
+	"flag"
+	"fmt"
+	"log"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"whatis/internal/file"
+)
+
+func main() {
+	flag.Parse()
+
+	f := flag.Arg(0)
+	if f == "" {
+		flag.Usage()
+		os.Exit(1)
+	}
+
+	s, err := os.Stat(f)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	if s.IsDir() {
+		entries, err := os.ReadDir(f)
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		for _, e := range entries {
+			if e.IsDir() {
+				continue
+			}
+
+			p := filepath.Join(f, e.Name())
+			info, err := file.Inspect(file.Info{Path: p})
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+
+			fmt.Printf("%s: ", info.Path)
+			printInfo(info, 0)
+			fmt.Println()
+		}
+	} else {
+		info, err := file.Inspect(file.Info{Path: f})
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		fmt.Println(info.Path)
+		printInfo(info, 0)
+	}
+}
+
+func printInfo(info file.Info, indent int) {
+	indentStr := strings.Repeat(" ", indent)
+	fmt.Printf("%s%s\n", indentStr, info.Description)
+	for k, v := range info.Attributes {
+		fmt.Printf("%s  %s: %s\n", indentStr, k, v)
+	}
+	for _, child := range info.Children {
+		printInfo(child, indent+2)
+	}
+}
