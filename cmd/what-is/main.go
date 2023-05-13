@@ -39,13 +39,12 @@ func main() {
 			p := filepath.Join(f, e.Name())
 			info, err := file.Inspect(file.Info{Path: p})
 			if err != nil {
-				log.Println(err)
+				log.Printf("error processing file \"%s\": %v", p, err)
 				continue
 			}
 
 			fmt.Printf("%s: ", info.Path)
 			printInfo(info, 0)
-			fmt.Println()
 		}
 	} else {
 		info, err := file.Inspect(file.Info{Path: f})
