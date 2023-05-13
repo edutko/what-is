@@ -73,13 +73,13 @@ func parseCertificate(der []byte) (Info, error) {
 
 	return Info{
 		Description: "x.509 certificate",
-		Attributes: map[string]string{
-			"Serial":               c.SerialNumber.String(),
-			"Subject":              c.Subject.String(),
-			"Issuer":               c.Issuer.String(),
-			"Expiration":           c.NotAfter.Format("2006-01-02"),
-			"Public key algorithm": c.PublicKeyAlgorithm.String(),
-			"Signature algorithm":  c.SignatureAlgorithm.String(),
+		Attributes: []Attribute{
+			{"Serial", c.SerialNumber.String()},
+			{"Subject", c.Subject.String()},
+			{"Issuer", c.Issuer.String()},
+			{"Expiration", c.NotAfter.Format("2006-01-02")},
+			{"Public key algorithm", c.PublicKeyAlgorithm.String()},
+			{"Signature algorithm", c.SignatureAlgorithm.String()},
 		},
 	}, nil
 }
@@ -110,12 +110,11 @@ func parsePKCS8PrivateKey(der []byte) (Info, error) {
 func parseECParameters(der []byte) (Info, error) {
 	info := Info{
 		Description: "EC parameters",
-		Attributes:  map[string]string{},
 	}
 
 	var curveOid asn1.ObjectIdentifier
 	if _, err := asn1.Unmarshal(der, &curveOid); err == nil {
-		info.Attributes["Named curve"] = curveNameFromOID(curveOid)
+		info.Attributes = append(info.Attributes, Attribute{"Named curve", curveNameFromOID(curveOid)})
 	}
 
 	return info, nil
@@ -166,7 +165,6 @@ func parseOpenSSHPrivateKey(der []byte) (Info, error) {
 
 	info := Info{
 		Description: "OpenSSH private key",
-		Attributes:  map[string]string{},
 	}
 
 	var w struct {
@@ -189,9 +187,11 @@ func parseOpenSSHPrivateKey(der []byte) (Info, error) {
 
 	if w.CipherName != "none" {
 		info.Description = "OpenSSH private key (encrypted)"
-		info.Attributes["Cipher"] = w.CipherName
-		info.Attributes["KDF"] = w.KdfName
-		info.Attributes["KDF options"] = w.KdfOpts
+		info.Attributes = append(info.Attributes,
+			Attribute{"Cipher", w.CipherName},
+			Attribute{"KDF", w.KdfName},
+			Attribute{"KDF options", w.KdfOpts},
+		)
 	}
 
 	pk, err := ssh.ParsePublicKey(w.PubKey)
@@ -203,7 +203,7 @@ func parseOpenSSHPrivateKey(der []byte) (Info, error) {
 	}
 
 	// TODO: collect additional attributes (e.g. RSA key size)
-	info.Attributes["Type"] = pk.Type()
+	info.Attributes = append(info.Attributes, Attribute{"Type", pk.Type()})
 
 	return info, nil
 }

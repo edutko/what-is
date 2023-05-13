@@ -60,8 +60,8 @@ func main() {
 func printInfo(info file.Info, indent int) {
 	indentStr := strings.Repeat(" ", indent)
 	fmt.Printf("%s%s\n", indentStr, info.Description)
-	for k, v := range info.Attributes {
-		fmt.Printf("%s  %s: %s\n", indentStr, k, v)
+	for _, a := range info.Attributes {
+		fmt.Printf("%s  %s: %s\n", indentStr, a.Name, a.Value)
 	}
 	for _, child := range info.Children {
 		printInfo(child, indent+2)

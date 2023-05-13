@@ -11,8 +11,13 @@ import (
 type Info struct {
 	Path        string
 	Description string
-	Attributes  map[string]string
+	Attributes  []Attribute
 	Children    []Info
+}
+
+type Attribute struct {
+	Name  string
+	Value string
 }
 
 var ErrNotRegularFile = errors.New("only regular files are supported")

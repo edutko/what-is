@@ -55,7 +55,6 @@ func PGPPrivateKey(info Info, data []byte) (Info, error) {
 	}
 
 	info.Description = "GPG/PGP private key"
-	info.Attributes = map[string]string{}
 
 	r := packet.NewReader(blk.Body)
 	p, err := r.Next()
@@ -64,12 +63,14 @@ func PGPPrivateKey(info Info, data []byte) (Info, error) {
 	}
 
 	if pk, ok := p.(*packet.PrivateKey); ok {
-		info.Attributes["Key ID"] = pk.KeyIdString()
-		info.Attributes["Fingerprint"] = strings.ToUpper(hex.EncodeToString(pk.Fingerprint[:]))
-		info.Attributes["Algorithm"] = pubkeyAlgorithmNames[pk.PubKeyAlgo]
+		info.Attributes = append(info.Attributes,
+			Attribute{"Key ID", pk.KeyIdString()},
+			Attribute{"Fingerprint", strings.ToUpper(hex.EncodeToString(pk.Fingerprint[:]))},
+			Attribute{"Algorithm", pubkeyAlgorithmNames[pk.PubKeyAlgo]},
+		)
 		l, err := pk.BitLength()
 		if err == nil {
-			info.Attributes["Size"] = fmt.Sprintf("%d bits", l)
+			info.Attributes = append(info.Attributes, Attribute{"Size", fmt.Sprintf("%d bits", l)})
 		}
 	}
 
@@ -83,7 +84,6 @@ func PGPPublicKey(info Info, data []byte) (Info, error) {
 	}
 
 	info.Description = "GPG/PGP public key"
-	info.Attributes = map[string]string{}
 
 	r := packet.NewReader(blk.Body)
 	p, err := r.Next()
@@ -92,12 +92,14 @@ func PGPPublicKey(info Info, data []byte) (Info, error) {
 	}
 
 	if pk, ok := p.(*packet.PublicKey); ok {
-		info.Attributes["Key ID"] = pk.KeyIdString()
-		info.Attributes["Fingerprint"] = strings.ToUpper(hex.EncodeToString(pk.Fingerprint[:]))
-		info.Attributes["Algorithm"] = pubkeyAlgorithmNames[pk.PubKeyAlgo]
+		info.Attributes = append(info.Attributes,
+			Attribute{"Key ID", pk.KeyIdString()},
+			Attribute{"Fingerprint", strings.ToUpper(hex.EncodeToString(pk.Fingerprint[:]))},
+			Attribute{"Algorithm", pubkeyAlgorithmNames[pk.PubKeyAlgo]},
+		)
 		l, err := pk.BitLength()
 		if err == nil {
-			info.Attributes["Size"] = fmt.Sprintf("%d bits", l)
+			info.Attributes = append(info.Attributes, Attribute{"Size", fmt.Sprintf("%d bits", l)})
 		}
 	}
 
@@ -121,9 +123,9 @@ func SSHAuthorizedKeys(info Info, data []byte) (Info, error) {
 		}
 		keys = append(keys, Info{
 			Description: "SSH public key",
-			Attributes: map[string]string{
-				"Type":    pub.Type(),
-				"Comment": comment,
+			Attributes: []Attribute{
+				{"Type", pub.Type()},
+				{"Comment", comment},
 			},
 		})
 	}
@@ -144,10 +146,10 @@ func SSHKnownHosts(info Info, data []byte) (Info, error) {
 		}
 		keys = append(keys, Info{
 			Description: "SSH public key",
-			Attributes: map[string]string{
-				"Type":    pub.Type(),
-				"Hosts":   strings.Join(hosts, ", "),
-				"Comment": comment,
+			Attributes: []Attribute{
+				{"Type", pub.Type()},
+				{"Hosts", strings.Join(hosts, ", ")},
+				{"Comment", comment},
 			},
 		})
 	}
@@ -166,9 +168,9 @@ func SSHPublicKey(info Info, data []byte) (Info, error) {
 	return Info{
 		Path:        info.Path,
 		Description: "SSH public key",
-		Attributes: map[string]string{
-			"Type":    pub.Type(),
-			"Comment": comment,
+		Attributes: []Attribute{
+			{"Type", pub.Type()},
+			{"Comment", comment},
 		},
 	}, nil
 }
