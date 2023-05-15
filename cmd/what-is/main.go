@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"whatis/internal/file"
+	"github.com/edutko/what-is/internal/file"
 )
 
 func main() {

@@ -1,4 +1,4 @@
-module whatis
+module github.com/edutko/what-is
 
 go 1.20
 

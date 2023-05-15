@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"whatis/internal/units"
+	"github.com/edutko/what-is/internal/units"
 )
 
 type Info struct {
