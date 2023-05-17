@@ -288,6 +288,8 @@ func (pk *PrivateKey) parsePrivateKey(data []byte) (err error) {
 		return pk.parseElGamalPrivateKey(data)
 	case PubKeyAlgoECDSA:
 		return pk.parseECDSAPrivateKey(data)
+	case PubKeyAlgoEdDSA:
+		// TODO: implement private key parsing for EdDSA
 	}
 	panic("impossible")
 }

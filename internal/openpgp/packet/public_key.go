@@ -9,6 +9,7 @@ import (
 	"crypto"
 	"crypto/dsa"
 	"crypto/ecdsa"
+	"crypto/ed25519"
 	"crypto/elliptic"
 	"crypto/rsa"
 	"crypto/sha1"
@@ -33,9 +34,11 @@ var (
 	oidCurveP384 []byte = []byte{0x2B, 0x81, 0x04, 0x00, 0x22}
 	// NIST curve P-521
 	oidCurveP521 []byte = []byte{0x2B, 0x81, 0x04, 0x00, 0x23}
+	// Ed25519
+	oidEd25519 = []byte{0x2B, 0x06, 0x01, 0x04, 0x01, 0xDA, 0x47, 0x0F, 0x01}
 )
 
-const maxOIDLength = 8
+const maxOIDLength = 9
 
 // ecdsaKey stores the algorithm-specific fields for ECDSA keys.
 // as defined in RFC 6637, Section 9.
@@ -149,6 +152,44 @@ func (f *ecdhKdf) byteLen() int {
 	return 4
 }
 
+type eddsaKey struct {
+	// oid contains the OID byte sequence identifying the elliptic curve used
+	oid []byte
+	// p contains the elliptic curve point that represents the public key
+	p parsedMPI
+}
+
+func (f *eddsaKey) parse(r io.Reader) (err error) {
+	if f.oid, err = parseOID(r); err != nil {
+		return err
+	}
+	f.p.bytes, f.p.bitLength, err = readMPI(r)
+	return
+}
+
+func (f *eddsaKey) serialize(w io.Writer) (err error) {
+	buf := make([]byte, maxOIDLength+1)
+	buf[0] = byte(len(f.oid))
+	copy(buf[1:], f.oid)
+	if _, err = w.Write(buf[:len(f.oid)+1]); err != nil {
+		return
+	}
+	return writeMPIs(w, f.p)
+}
+
+func (f *eddsaKey) newEdDSA() (interface{}, error) {
+	if bytes.Equal(f.oid, oidEd25519) {
+		// ... the octet string specifying the point is prefixed with the octet 0x40.
+		// https://datatracker.ietf.org/doc/html/draft-ietf-openpgp-rfc4880bis-01#section-13.3
+		return ed25519.PublicKey(f.p.bytes[1:]), nil
+	}
+	return nil, errors.UnsupportedError("unknown EdDSA curve")
+}
+
+func (f *eddsaKey) byteLen() int {
+	return 1 + len(f.oid) + 2 + len(f.p.bytes)
+}
+
 // PublicKey represents an OpenPGP public key. See RFC 4880, section 5.5.2.
 type PublicKey struct {
 	CreationTime time.Time
@@ -163,6 +204,7 @@ type PublicKey struct {
 	// RFC 6637 fields
 	ec   *ecdsaKey
 	ecdh *ecdhKdf
+	ed   *eddsaKey
 }
 
 // signingKey provides a convenient abstraction over signature verification
@@ -291,6 +333,12 @@ func (pk *PublicKey) parse(r io.Reader) (err error) {
 		}
 		// The ECDH key is stored in an ecdsa.PublicKey for convenience.
 		pk.PublicKey, err = pk.ec.newECDSA()
+	case PubKeyAlgoEdDSA:
+		pk.ed = new(eddsaKey)
+		if err = pk.ed.parse(r); err != nil {
+			return
+		}
+		pk.PublicKey, err = pk.ed.newEdDSA()
 	default:
 		err = errors.UnsupportedError("public key type: " + strconv.Itoa(int(pk.PubKeyAlgo)))
 	}
@@ -415,6 +463,8 @@ func (pk *PublicKey) SerializeSignaturePrefix(h io.Writer) {
 	case PubKeyAlgoECDH:
 		pLength += uint16(pk.ec.byteLen())
 		pLength += uint16(pk.ecdh.byteLen())
+	case PubKeyAlgoEdDSA:
+		pLength += uint16(pk.ed.byteLen())
 	default:
 		panic("unknown public key algorithm")
 	}
@@ -490,6 +540,8 @@ func (pk *PublicKey) serializeWithoutHeaders(w io.Writer) (err error) {
 			return
 		}
 		return pk.ecdh.serialize(w)
+	case PubKeyAlgoEdDSA:
+		return pk.ed.serialize(w)
 	}
 	return errors.InvalidArgumentError("bad public-key algorithm")
 }
@@ -540,6 +592,12 @@ func (pk *PublicKey) VerifySignature(signed hash.Hash, sig *Signature) (err erro
 		ecdsaPublicKey := pk.PublicKey.(*ecdsa.PublicKey)
 		if !ecdsa.Verify(ecdsaPublicKey, hashBytes, new(big.Int).SetBytes(sig.ECDSASigR.bytes), new(big.Int).SetBytes(sig.ECDSASigS.bytes)) {
 			return errors.SignatureError("ECDSA verification failure")
+		}
+		return nil
+	case PubKeyAlgoEdDSA:
+		eddsaPublicKey := pk.PublicKey.(ed25519.PublicKey)
+		if !ed25519.Verify(eddsaPublicKey, hashBytes, append(sig.ECDSASigR.bytes, sig.ECDSASigS.bytes...)) {
+			return errors.SignatureError("EdDSA verification failure")
 		}
 		return nil
 	default:

@@ -98,7 +98,7 @@ func (sig *Signature) parse(r io.Reader) (err error) {
 	sig.SigType = SignatureType(buf[0])
 	sig.PubKeyAlgo = PublicKeyAlgorithm(buf[1])
 	switch sig.PubKeyAlgo {
-	case PubKeyAlgoRSA, PubKeyAlgoRSASignOnly, PubKeyAlgoDSA, PubKeyAlgoECDSA:
+	case PubKeyAlgoRSA, PubKeyAlgoRSASignOnly, PubKeyAlgoDSA, PubKeyAlgoECDSA, PubKeyAlgoEdDSA:
 	default:
 		err = errors.UnsupportedError("public key algorithm " + strconv.Itoa(int(sig.PubKeyAlgo)))
 		return
@@ -163,6 +163,11 @@ func (sig *Signature) parse(r io.Reader) (err error) {
 			sig.DSASigS.bytes, sig.DSASigS.bitLength, err = readMPI(r)
 		}
 	case PubKeyAlgoECDSA:
+		sig.ECDSASigR.bytes, sig.ECDSASigR.bitLength, err = readMPI(r)
+		if err == nil {
+			sig.ECDSASigS.bytes, sig.ECDSASigS.bitLength, err = readMPI(r)
+		}
+	case PubKeyAlgoEdDSA:
 		sig.ECDSASigR.bytes, sig.ECDSASigR.bitLength, err = readMPI(r)
 		if err == nil {
 			sig.ECDSASigS.bytes, sig.ECDSASigS.bitLength, err = readMPI(r)

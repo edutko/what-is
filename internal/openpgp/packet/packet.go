@@ -451,6 +451,9 @@ const (
 	PubKeyAlgoECDH  PublicKeyAlgorithm = 18
 	PubKeyAlgoECDSA PublicKeyAlgorithm = 19
 
+	// https://datatracker.ietf.org/doc/html/draft-ietf-openpgp-rfc4880bis-01#section-9.1
+	PubKeyAlgoEdDSA PublicKeyAlgorithm = 22
+
 	// Deprecated in RFC 4880, Section 13.5. Use key flags instead.
 	PubKeyAlgoRSAEncryptOnly PublicKeyAlgorithm = 2
 	PubKeyAlgoRSASignOnly    PublicKeyAlgorithm = 3
