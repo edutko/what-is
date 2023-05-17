@@ -27,6 +27,8 @@ const (
 	KeyFlagSign
 	KeyFlagEncryptCommunications
 	KeyFlagEncryptStorage
+	KeyFlagSplitKey
+	KeyFlagAuthentication
 )
 
 // Signature represents a signature. See RFC 4880, section 5.2.
@@ -59,8 +61,8 @@ type Signature struct {
 
 	// FlagsValid is set if any flags were given. See RFC 4880, section
 	// 5.2.3.21 for details.
-	FlagsValid                                                           bool
-	FlagCertify, FlagSign, FlagEncryptCommunications, FlagEncryptStorage bool
+	FlagsValid                                                                               bool
+	FlagCertify, FlagSign, FlagEncryptCommunications, FlagEncryptStorage, FlagAuthentication bool
 
 	// RevocationReason is set if this signature has been revoked.
 	// See RFC 4880, section 5.2.3.23 for details.
@@ -350,6 +352,9 @@ func parseSignatureSubpacket(sig *Signature, subpacket []byte, isHashed bool) (r
 		}
 		if subpacket[0]&KeyFlagEncryptStorage != 0 {
 			sig.FlagEncryptStorage = true
+		}
+		if subpacket[0]&KeyFlagAuthentication != 0 {
+			sig.FlagAuthentication = true
 		}
 	case reasonForRevocationSubpacket:
 		// Reason For Revocation, section 5.2.3.23
