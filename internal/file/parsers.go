@@ -2,13 +2,14 @@ package file
 
 import (
 	"bytes"
-	"encoding/hex"
 	"encoding/pem"
 	"fmt"
 	"strings"
 
-	"golang.org/x/crypto/openpgp/packet"
 	"golang.org/x/crypto/ssh"
+
+	"github.com/edutko/what-is/internal/openpgp"
+	"github.com/edutko/what-is/internal/openpgp/packet"
 )
 
 type Parser func(info Info, data []byte) (Info, error)
@@ -49,58 +50,46 @@ func PEMFile(info Info, data []byte) (Info, error) {
 }
 
 func PGPPrivateKey(info Info, data []byte) (Info, error) {
-	blk, err := readArmoredPGPData(data)
-	if err != nil {
-		return info, fmt.Errorf("readArmoredPGPData: %w", err)
-	}
-
 	info.Description = "GPG/PGP private key"
-
-	r := packet.NewReader(blk.Body)
-	p, err := r.Next()
-	if err != nil {
-		return info, fmt.Errorf("r.Next: %w", err)
-	}
-
-	if pk, ok := p.(*packet.PrivateKey); ok {
-		info.Attributes = append(info.Attributes,
-			Attribute{"Key ID", pk.KeyIdString()},
-			Attribute{"Fingerprint", strings.ToUpper(hex.EncodeToString(pk.Fingerprint[:]))},
-			Attribute{"Algorithm", pubkeyAlgorithmNames[pk.PubKeyAlgo]},
-		)
-		l, err := pk.BitLength()
-		if err == nil {
-			info.Attributes = append(info.Attributes, Attribute{"Size", fmt.Sprintf("%d bits", l)})
-		}
-	}
-
-	return info, nil
+	return pgpKey(info, data)
 }
 
 func PGPPublicKey(info Info, data []byte) (Info, error) {
+	info.Description = "GPG/PGP public key"
+	return pgpKey(info, data)
+}
+
+func pgpKey(info Info, data []byte) (Info, error) {
 	blk, err := readArmoredPGPData(data)
 	if err != nil {
 		return info, fmt.Errorf("readArmoredPGPData: %w", err)
 	}
 
-	info.Description = "GPG/PGP public key"
-
 	r := packet.NewReader(blk.Body)
-	p, err := r.Next()
+	e, err := openpgp.ReadEntity(r)
 	if err != nil {
-		return info, fmt.Errorf("r.Next: %w", err)
+		return info, fmt.Errorf("openpgp.ReadEntity: %w", err)
 	}
 
-	if pk, ok := p.(*packet.PublicKey); ok {
-		info.Attributes = append(info.Attributes,
-			Attribute{"Key ID", pk.KeyIdString()},
-			Attribute{"Fingerprint", strings.ToUpper(hex.EncodeToString(pk.Fingerprint[:]))},
-			Attribute{"Algorithm", pubkeyAlgorithmNames[pk.PubKeyAlgo]},
-		)
-		l, err := pk.BitLength()
-		if err == nil {
-			info.Attributes = append(info.Attributes, Attribute{"Size", fmt.Sprintf("%d bits", l)})
+	info.Attributes = gpgPublicKeyAttributes(e.PrimaryKey)
+	for _, i := range e.Identities {
+		attrs := gpgSignatureAttributes(i.SelfSignature)
+		for _, s := range i.Signatures {
+			attrs = append(attrs, gpgSignatureAttributes(s)...)
 		}
+		info.Children = append(info.Children, Info{
+			Description: i.Name,
+			Attributes:  attrs,
+		})
+	}
+
+	for _, s := range e.Subkeys {
+		attrs := gpgPublicKeyAttributes(s.PublicKey)
+		attrs = append(attrs, gpgSignatureAttributes(s.Sig)...)
+		info.Children = append(info.Children, Info{
+			Description: "GPG/PGP subkey",
+			Attributes:  attrs,
+		})
 	}
 
 	return info, nil
