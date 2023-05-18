@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/pem"
 	"fmt"
-	"strings"
 
 	"golang.org/x/crypto/ssh"
 
@@ -33,11 +32,10 @@ func PEMFile(info Info, data []byte) (Info, error) {
 	}
 
 	if len(blockInfos) == 1 {
-		return Info{
-			Path:        info.Path,
-			Description: blockInfos[0].Description,
-			Attributes:  blockInfos[0].Attributes,
-		}, nil
+		info.Description = blockInfos[0].Description
+		info.Attributes = blockInfos[0].Attributes
+		return info, nil
+
 	} else if len(blockInfos) > 1 {
 		info.Description = "multiple PEM blocks"
 		for _, c := range blockInfos {
@@ -103,6 +101,7 @@ func PuttyPPK(info Info, _ []byte) (Info, error) {
 }
 
 func SSHAuthorizedKeys(info Info, data []byte) (Info, error) {
+	info.Description = "SSH authorized_keys"
 	lines := bytes.Split(data, []byte("\n"))
 	var keys []Info
 	for _, l := range lines {
@@ -112,54 +111,40 @@ func SSHAuthorizedKeys(info Info, data []byte) (Info, error) {
 		}
 		keys = append(keys, Info{
 			Description: "SSH public key",
-			Attributes: []Attribute{
-				{"Type", pub.Type()},
-				{"Comment", comment},
-			},
+			Attributes:  sshPublicKeyAttributes(pub, comment),
 		})
 	}
-	return Info{
-		Path:        info.Path,
-		Description: "SSH authorized_keys",
-		Children:    keys,
-	}, nil
+	info.Children = keys
+	return info, nil
 }
 
 func SSHKnownHosts(info Info, data []byte) (Info, error) {
+	info.Description = "SSH known_hosts"
 	lines := bytes.Split(data, []byte("\n"))
 	var keys []Info
 	for _, l := range lines {
+		if len(bytes.TrimSpace(l)) == 0 {
+			continue
+		}
 		_, hosts, pub, comment, _, err := ssh.ParseKnownHosts(l)
 		if err != nil {
 			return info, fmt.Errorf("ssh.ParseKnownHosts: %w", err)
 		}
 		keys = append(keys, Info{
 			Description: "SSH public key",
-			Attributes: []Attribute{
-				{"Type", pub.Type()},
-				{"Hosts", strings.Join(hosts, ", ")},
-				{"Comment", comment},
-			},
+			Attributes:  sshKnownHostsKeyAttributes(hosts, pub, comment),
 		})
 	}
-	return Info{
-		Path:        info.Path,
-		Description: "SSH known_hosts",
-		Children:    keys,
-	}, nil
+	info.Children = keys
+	return info, nil
 }
 
 func SSHPublicKey(info Info, data []byte) (Info, error) {
+	info.Description = "SSH public key"
 	pub, comment, _, _, err := ssh.ParseAuthorizedKey(data)
 	if err != nil {
 		return info, fmt.Errorf("ssh.ParsePublicKey: %w", err)
 	}
-	return Info{
-		Path:        info.Path,
-		Description: "SSH public key",
-		Attributes: []Attribute{
-			{"Type", pub.Type()},
-			{"Comment", comment},
-		},
-	}, nil
+	info.Attributes = sshPublicKeyAttributes(pub, comment)
+	return info, nil
 }
