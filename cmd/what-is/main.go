@@ -14,13 +14,20 @@ import (
 const usage = `Usage:
     %[1]s <file>
     %[1]s [-r] <directory>
+    %[1]s --version
 `
 
 func main() {
 	flag.Usage = func() { _, _ = fmt.Fprintf(os.Stderr, "%s\n", fmt.Sprintf(usage, os.Args[0])) }
 
 	recursive := flag.Bool("r", false, "recursive")
+	version := flag.Bool("version", false, "print version")
 	flag.Parse()
+
+	if *version {
+		fmt.Printf("%s %s\n", os.Args[0], Version)
+		os.Exit(0)
+	}
 
 	f := flag.Arg(0)
 	if f == "" {
@@ -89,5 +96,7 @@ func printInfo(info file.Info, indent int) {
 		printInfo(child, indent+2)
 	}
 }
+
+var Version = "0.0.0"
 
 const maxDepth = 1000
