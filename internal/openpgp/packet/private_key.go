@@ -10,6 +10,7 @@ import (
 	"crypto/cipher"
 	"crypto/dsa"
 	"crypto/ecdsa"
+	"crypto/ed25519"
 	"crypto/rsa"
 	"crypto/sha1"
 	"io"
@@ -289,7 +290,7 @@ func (pk *PrivateKey) parsePrivateKey(data []byte) (err error) {
 	case PubKeyAlgoECDSA:
 		return pk.parseECDSAPrivateKey(data)
 	case PubKeyAlgoEdDSA:
-		// TODO: implement private key parsing for EdDSA
+		return pk.parseEdDSAPrivateKey(data)
 	}
 	panic("impossible")
 }
@@ -379,6 +380,24 @@ func (pk *PrivateKey) parseECDSAPrivateKey(data []byte) (err error) {
 		PublicKey: *ecdsaPub,
 		D:         new(big.Int).SetBytes(d),
 	}
+	pk.Encrypted = false
+	pk.encryptedData = nil
+
+	return nil
+}
+
+func (pk *PrivateKey) parseEdDSAPrivateKey(data []byte) (err error) {
+	buf := bytes.NewBuffer(data)
+	d, _, err := readMPI(buf)
+	if err != nil {
+		return
+	}
+
+	switch pk.PublicKey.PublicKey.(type) {
+	case ed25519.PublicKey:
+		pk.PrivateKey = ed25519.PrivateKey(d)
+	}
+
 	pk.Encrypted = false
 	pk.encryptedData = nil
 

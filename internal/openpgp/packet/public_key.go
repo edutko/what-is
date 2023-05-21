@@ -36,9 +36,11 @@ var (
 	oidCurveP521 []byte = []byte{0x2B, 0x81, 0x04, 0x00, 0x23}
 	// Ed25519
 	oidEd25519 = []byte{0x2B, 0x06, 0x01, 0x04, 0x01, 0xDA, 0x47, 0x0F, 0x01}
+	// X25519
+	oidX25519 = []byte{0x2B, 0x06, 0x01, 0x04, 0x01, 0x97, 0x55, 0x01, 0x05, 0x01}
 )
 
-const maxOIDLength = 9
+const maxOIDLength = 10
 
 // ecdsaKey stores the algorithm-specific fields for ECDSA keys.
 // as defined in RFC 6637, Section 9.
@@ -186,6 +188,15 @@ func (f *eddsaKey) newEdDSA() (interface{}, error) {
 	return nil, errors.UnsupportedError("unknown EdDSA curve")
 }
 
+func (f *eddsaKey) newX25519() (interface{}, error) {
+	if bytes.Equal(f.oid, oidX25519) {
+		// ... the octet string specifying the point is prefixed with the octet 0x40.
+		// https://datatracker.ietf.org/doc/html/draft-ietf-openpgp-rfc4880bis-01#section-13.3
+		return f.p.bytes[1:], nil
+	}
+	return nil, errors.UnsupportedError("unknown ECDH curve")
+}
+
 func (f *eddsaKey) byteLen() int {
 	return 1 + len(f.oid) + 2 + len(f.p.bytes)
 }
@@ -331,8 +342,16 @@ func (pk *PublicKey) parse(r io.Reader) (err error) {
 		if err = pk.ecdh.parse(r); err != nil {
 			return
 		}
-		// The ECDH key is stored in an ecdsa.PublicKey for convenience.
-		pk.PublicKey, err = pk.ec.newECDSA()
+		if bytes.Equal(pk.ec.oid, oidX25519) {
+			pk.ed = new(eddsaKey)
+			pk.ed.oid = pk.ec.oid
+			pk.ed.p = pk.ec.p
+			pk.ec = nil
+			pk.PublicKey, err = pk.ed.newX25519()
+		} else {
+			// The ECDH key is stored in an ecdsa.PublicKey for convenience.
+			pk.PublicKey, err = pk.ec.newECDSA()
+		}
 	case PubKeyAlgoEdDSA:
 		pk.ed = new(eddsaKey)
 		if err = pk.ed.parse(r); err != nil {
@@ -461,7 +480,11 @@ func (pk *PublicKey) SerializeSignaturePrefix(h io.Writer) {
 	case PubKeyAlgoECDSA:
 		pLength += uint16(pk.ec.byteLen())
 	case PubKeyAlgoECDH:
-		pLength += uint16(pk.ec.byteLen())
+		if pk.ec != nil {
+			pLength += uint16(pk.ec.byteLen())
+		} else if pk.ed != nil {
+			pLength += uint16(pk.ed.byteLen())
+		}
 		pLength += uint16(pk.ecdh.byteLen())
 	case PubKeyAlgoEdDSA:
 		pLength += uint16(pk.ed.byteLen())
@@ -536,8 +559,14 @@ func (pk *PublicKey) serializeWithoutHeaders(w io.Writer) (err error) {
 	case PubKeyAlgoECDSA:
 		return pk.ec.serialize(w)
 	case PubKeyAlgoECDH:
-		if err = pk.ec.serialize(w); err != nil {
-			return
+		if pk.ec != nil {
+			if err = pk.ec.serialize(w); err != nil {
+				return
+			}
+		} else if pk.ed != nil {
+			if err = pk.ed.serialize(w); err != nil {
+				return
+			}
 		}
 		return pk.ecdh.serialize(w)
 	case PubKeyAlgoEdDSA:
