@@ -11,7 +11,15 @@ import (
 	"github.com/edutko/what-is/internal/file"
 )
 
+const usage = `Usage:
+    %[1]s <file>
+    %[1]s [-r] <directory>
+`
+
 func main() {
+	flag.Usage = func() { _, _ = fmt.Fprintf(os.Stderr, "%s\n", fmt.Sprintf(usage, os.Args[0])) }
+
+	recursive := flag.Bool("r", false, "recursive")
 	flag.Parse()
 
 	f := flag.Arg(0)
@@ -25,36 +33,50 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	if s.IsDir() {
-		entries, err := os.ReadDir(f)
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-		for _, e := range entries {
-			if e.IsDir() {
-				continue
-			}
-
-			p := filepath.Join(f, e.Name())
-			info, err := file.Inspect(file.Info{Path: p})
-			if err != nil {
-				log.Printf("error processing file \"%s\": %v", p, err)
-				continue
-			}
-
-			fmt.Printf("%s: ", info.Path)
-			printInfo(info, 0)
-		}
-	} else {
-		info, err := file.Inspect(file.Info{Path: f})
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-		fmt.Println(info.Path)
-		printInfo(info, 0)
+	depth := 0
+	if *recursive {
+		depth = maxDepth
 	}
+
+	if s.IsDir() {
+		if !*recursive {
+			_, _ = fmt.Fprintf(os.Stderr, "error: \"%s\" is a directory. Specify -r to recurse into directories.", f)
+			os.Exit(1)
+		}
+		inspectDirectory(f, depth)
+	} else {
+		inspectFile(f)
+	}
+}
+
+func inspectDirectory(f string, remainingDepth int) {
+	if remainingDepth < 0 {
+		return
+	}
+
+	entries, err := os.ReadDir(f)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	for _, e := range entries {
+		p := filepath.Join(f, e.Name())
+		if e.IsDir() {
+			inspectDirectory(p, remainingDepth-1)
+		} else {
+			inspectFile(p)
+		}
+	}
+}
+
+func inspectFile(f string) {
+	info, err := file.Inspect(file.Info{Path: f})
+	if err != nil {
+		log.Printf("error processing file \"%s\": %v", f, err)
+	}
+
+	fmt.Printf("%s: ", info.Path)
+	printInfo(info, 0)
 }
 
 func printInfo(info file.Info, indent int) {
@@ -67,3 +89,5 @@ func printInfo(info file.Info, indent int) {
 		printInfo(child, indent+2)
 	}
 }
+
+const maxDepth = 1000
