@@ -1,0 +1,76 @@
+name: Go package
+on:
+  release:
+    types: [published]
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - {GOOS: linux, GOARCH: amd64}
+          - {GOOS: linux, GOARCH: arm, GOARM: 6}
+          - {GOOS: linux, GOARCH: arm64}
+          - {GOOS: darwin, GOARCH: amd64}
+          - {GOOS: darwin, GOARCH: arm64}
+          - {GOOS: windows, GOARCH: amd64}
+          - {GOOS: freebsd, GOARCH: amd64}
+
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.x
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Build
+        env:
+          CGO_ENABLED: 0
+          GOOS: ${{ matrix.GOOS }}
+          GOARCH: ${{ matrix.GOARCH }}
+          GOARM: ${{ matrix.GOARM }}
+        run: |
+          DIR="$(mktemp -d)"
+          mkdir "$DIR/what-is"
+          VERSION="$(git describe --tags)"
+          go build -o "$DIR/what-is" -ldflags "-X main.Version=$VERSION" -trimpath ./cmd/...
+          cp LICENSE "$DIR/what-is/LICENSE"
+          echo -e "\n---\n" >> "$DIR/what-is/LICENSE"
+          curl -L "https://go.dev/LICENSE?m=text" >> "$DIR/what-is/LICENSE"
+          if [ "$GOOS" == "windows" ]; then
+            ( cd "$DIR"; zip what-is-$VERSION-$GOOS-$GOARCH.zip -r what-is )
+          else
+            tar -cvzf "what-is-$VERSION-$GOOS-$GOARCH.tar.gz" -C "$DIR" what-is
+          fi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: what-is-binaries
+          path: what-is-*
+
+  upload:
+    name: Upload release binaries
+    if: github.event_name == 'release'
+    needs: build
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download workflow artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: what-is-binaries
+
+      - name: Upload release artifacts
+        run: gh release upload "$GITHUB_REF_NAME" what-is-*
+        env:
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
