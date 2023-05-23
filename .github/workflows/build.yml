@@ -28,6 +28,8 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Build
         env:
@@ -45,6 +47,7 @@ jobs:
           curl -L "https://go.dev/LICENSE?m=text" >> "$DIR/what-is/LICENSE"
           if [ "$GOOS" == "windows" ]; then
             ( cd "$DIR"; zip what-is-$VERSION-$GOOS-$GOARCH.zip -r what-is )
+            mv "$DIR/what-is-$VERSION-$GOOS-$GOARCH.zip" .
           else
             tar -cvzf "what-is-$VERSION-$GOOS-$GOARCH.tar.gz" -C "$DIR" what-is
           fi
@@ -52,7 +55,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: what-is-binaries
+          name: binaries
           path: what-is-*
 
   upload:
@@ -67,7 +70,7 @@ jobs:
       - name: Download workflow artifacts
         uses: actions/download-artifact@v2
         with:
-          name: what-is-binaries
+          name: binaries
 
       - name: Upload release artifacts
         run: gh release upload "$GITHUB_REF_NAME" what-is-*
