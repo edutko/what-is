@@ -24,6 +24,9 @@ type filetype struct {
 }
 
 func (f filetype) MatchesName(name string) bool {
+	if name == "" {
+		return false
+	}
 	name = filepath.Base(name)
 	for _, p := range f.patterns {
 		if p == "*" {
