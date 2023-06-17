@@ -9,7 +9,9 @@ import (
 func sshPublicKeyAttributes(pub ssh.PublicKey, comment string) []Attribute {
 	attrs := []Attribute{
 		{"Type", pub.Type()},
-		{"Comment", comment},
+	}
+	if comment != "" {
+		attrs = append(attrs, Attribute{"Comment", comment})
 	}
 	if pk, ok := pub.(ssh.CryptoPublicKey); ok {
 		attrs = append(attrs, cryptoPublicKeyAttributes(pk.CryptoPublicKey())...)

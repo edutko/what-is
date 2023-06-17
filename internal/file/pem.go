@@ -203,7 +203,7 @@ func parseOpenSSHPrivateKey(der []byte) (Info, error) {
 	}
 
 	// TODO: collect additional attributes (e.g. RSA key size)
-	info.Attributes = append(info.Attributes, Attribute{"Type", pk.Type()})
+	info.Attributes = append(info.Attributes, sshPublicKeyAttributes(pk, "")...)
 
 	return info, nil
 }
