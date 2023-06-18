@@ -21,6 +21,13 @@ func JavaKeystore(info Info, _ []byte) (Info, error) {
 	}, nil
 }
 
+func JCEKeystore(info Info, _ []byte) (Info, error) {
+	return Info{
+		Path:        info.Path,
+		Description: "Java JCE Keystore",
+	}, nil
+}
+
 func PEMFile(info Info, data []byte) (Info, error) {
 	var blockInfos []Info
 	for rest := data; len(rest) > 0; {

@@ -10,6 +10,7 @@ var filetypes = []filetype{
 	{[]string{"authorized_keys"}, nil, SSHAuthorizedKeys},
 	{[]string{"known_hosts"}, nil, SSHKnownHosts},
 	{nil, []string{"PuTTY-User-Key-File-2:", "PuTTY-User-Key-File-3:"}, PuttyPPK},
+	{nil, []string{"\xCE\xCE\xCE\xCE"}, JCEKeystore},
 	{nil, []string{"\xFE\xED\xFE\xED"}, JavaKeystore},
 	{nil, []string{"ssh-dss", "ssh-rsa", "ecdsa-sha2-", "ssh-ed25519", "ssh-ed448"}, SSHPublicKey},
 	{nil, []string{"-----BEGIN PGP PUBLIC KEY BLOCK-----"}, PGPPublicKey},
