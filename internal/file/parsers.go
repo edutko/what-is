@@ -79,9 +79,9 @@ func pgpKey(info Info, data []byte) (Info, error) {
 
 	info.Attributes = gpgPublicKeyAttributes(e.PrimaryKey)
 	for _, i := range e.Identities {
-		attrs := gpgSignatureAttributes(i.SelfSignature)
+		attrs := gpgSignatureAttributes(i.SelfSignature, e.PrimaryKey.CreationTime)
 		for _, s := range i.Signatures {
-			attrs = append(attrs, gpgSignatureAttributes(s)...)
+			attrs = append(attrs, gpgSignatureAttributes(s, e.PrimaryKey.CreationTime)...)
 		}
 		info.Children = append(info.Children, Info{
 			Description: i.Name,
@@ -91,7 +91,7 @@ func pgpKey(info Info, data []byte) (Info, error) {
 
 	for _, s := range e.Subkeys {
 		attrs := gpgPublicKeyAttributes(s.PublicKey)
-		attrs = append(attrs, gpgSignatureAttributes(s.Sig)...)
+		attrs = append(attrs, gpgSignatureAttributes(s.Sig, s.PublicKey.CreationTime)...)
 		info.Children = append(info.Children, Info{
 			Description: "GPG/PGP subkey",
 			Attributes:  attrs,

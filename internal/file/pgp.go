@@ -68,14 +68,14 @@ func gpgPublicKeyAttributes(pk *packet.PublicKey) []Attribute {
 	return attrs
 }
 
-func gpgSignatureAttributes(s *packet.Signature) []Attribute {
+func gpgSignatureAttributes(s *packet.Signature, keyCreationTime time.Time) []Attribute {
 	attrs := []Attribute{
 		{"Usage", keyFlagsToString(s)},
 		{"Created", s.CreationTime.Format("2006-01-02")},
 	}
 	if l := s.KeyLifetimeSecs; l != nil {
 		exp := time.Duration(*l) * time.Second
-		attrs = append(attrs, Attribute{"Expires", s.CreationTime.Add(exp).Format("2006-01-02")})
+		attrs = append(attrs, Attribute{"Expires", keyCreationTime.Add(exp).Format("2006-01-02")})
 	} else {
 		attrs = append(attrs, Attribute{"Expires", "never"})
 	}
