@@ -25,11 +25,11 @@ func parseDERData(b []byte) Info {
 		return info
 	} else if info, err := parseECPrivateKey(b); err == nil {
 		return info
-	} else if info, err := parseECParameters(b); err == nil {
-		return info
 	} else if info, err := parseRSAPrivateKey(b); err == nil {
 		return info
 	} else if info, err := parseDSAPrivateKey(b); err == nil {
+		return info
+	} else if info, err := parseECParameters(b); err == nil {
 		return info
 	} else {
 		return UnknownASN1Data
