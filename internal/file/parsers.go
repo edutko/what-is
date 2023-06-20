@@ -50,6 +50,7 @@ func PEMFile(info Info, data []byte) (Info, error) {
 	if len(blockInfos) == 1 {
 		info.Description = blockInfos[0].Description
 		info.Attributes = blockInfos[0].Attributes
+		info.Children = blockInfos[0].Children
 		return info, nil
 
 	} else if len(blockInfos) > 1 {

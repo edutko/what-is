@@ -42,17 +42,24 @@ func parseCertificate(der []byte) (Info, error) {
 		return UnknownASN1Data, err
 	}
 
-	return Info{
+	info := Info{
 		Description: "x.509 certificate",
 		Attributes: []Attribute{
 			{"Serial", c.SerialNumber.String()},
 			{"Subject", c.Subject.String()},
 			{"Issuer", c.Issuer.String()},
 			{"Expiration", c.NotAfter.Format("2006-01-02")},
-			{"Public key algorithm", c.PublicKeyAlgorithm.String()},
 			{"Signature algorithm", c.SignatureAlgorithm.String()},
 		},
-	}, nil
+		Children: []Info{
+			{
+				Description: "Public key",
+				Attributes:  cryptoPublicKeyAttributes(c.PublicKey),
+			},
+		},
+	}
+
+	return info, nil
 }
 
 func parsePKCS1PublicKey(der []byte) (Info, error) {
