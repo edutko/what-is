@@ -14,6 +14,14 @@ import (
 
 type Parser func(info Info, data []byte) (Info, error)
 
+func ASN1File(info Info, data []byte) (Info, error) {
+	derInfo := parseDERData(data)
+	info.Description = derInfo.Description
+	info.Attributes = derInfo.Attributes
+	info.Children = derInfo.Children
+	return info, nil
+}
+
 func JavaKeystore(info Info, _ []byte) (Info, error) {
 	return Info{
 		Path:        info.Path,

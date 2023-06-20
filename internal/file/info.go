@@ -10,6 +10,7 @@ import (
 
 type Info struct {
 	Path        string
+	Size        int64
 	Description string
 	Attributes  []Attribute
 	Children    []Info
@@ -33,6 +34,8 @@ func Inspect(info Info) (Info, error) {
 	if s.Mode()&os.ModeType != 0 {
 		return info, ErrNotRegularFile
 	}
+
+	info.Size = s.Size()
 
 	var data []byte
 	if s.Size() > MaxReadSize {
@@ -68,7 +71,7 @@ func Inspect(info Info) (Info, error) {
 func candidateParsers(info Info, data []byte) []Parser {
 	var ps []Parser
 	for _, p := range filetypes {
-		if p.MatchesName(info.Path) || p.MatchesMagic(data) {
+		if p.MatchesName(info.Path) || p.MatchesMagic(data) || p.SmellsLike(info.Path, data, info.Size) {
 			ps = append(ps, p.parser)
 		}
 	}

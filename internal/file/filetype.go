@@ -7,20 +7,22 @@ import (
 )
 
 var filetypes = []filetype{
-	{[]string{"authorized_keys"}, nil, SSHAuthorizedKeys},
-	{[]string{"known_hosts"}, nil, SSHKnownHosts},
-	{nil, []string{"PuTTY-User-Key-File-2:", "PuTTY-User-Key-File-3:"}, PuttyPPK},
-	{nil, []string{"\xCE\xCE\xCE\xCE"}, JCEKeystore},
-	{nil, []string{"\xFE\xED\xFE\xED"}, JavaKeystore},
-	{nil, []string{"ssh-dss", "ssh-rsa", "ecdsa-sha2-", "ssh-ed25519", "ssh-ed448"}, SSHPublicKey},
-	{nil, []string{"-----BEGIN PGP PUBLIC KEY BLOCK-----"}, PGPPublicKey},
-	{nil, []string{"-----BEGIN PGP PRIVATE KEY BLOCK-----"}, PGPPrivateKey},
-	{nil, []string{"-----BEGIN "}, PEMFile},
+	{[]string{"authorized_keys"}, nil, nil, SSHAuthorizedKeys},
+	{[]string{"known_hosts"}, nil, nil, SSHKnownHosts},
+	{nil, []string{"PuTTY-User-Key-File-2:", "PuTTY-User-Key-File-3:"}, nil, PuttyPPK},
+	{nil, []string{"\xCE\xCE\xCE\xCE"}, nil, JCEKeystore},
+	{nil, []string{"\xFE\xED\xFE\xED"}, nil, JavaKeystore},
+	{nil, []string{"ssh-dss", "ssh-rsa", "ecdsa-sha2-", "ssh-ed25519", "ssh-ed448"}, nil, SSHPublicKey},
+	{nil, []string{"-----BEGIN PGP PUBLIC KEY BLOCK-----"}, nil, PGPPublicKey},
+	{nil, []string{"-----BEGIN PGP PRIVATE KEY BLOCK-----"}, nil, PGPPrivateKey},
+	{nil, []string{"-----BEGIN "}, nil, PEMFile},
+	{nil, nil, IsASN1, ASN1File},
 }
 
 type filetype struct {
 	patterns []string
 	magics   []string
+	identify Identifier
 	parser   Parser
 }
 
@@ -66,4 +68,11 @@ func (f filetype) MatchesMagic(data []byte) bool {
 		}
 	}
 	return false
+}
+
+func (f filetype) SmellsLike(name string, data []byte, fileSize int64) bool {
+	if f.identify == nil {
+		return false
+	}
+	return f.identify(name, data, fileSize)
 }
