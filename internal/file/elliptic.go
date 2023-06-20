@@ -28,8 +28,7 @@ var namedCurvesByOid = map[string]string{
 }
 
 func curveNameFromOID(oid asn1.ObjectIdentifier) string {
-	name := namedCurvesByOid[oid.String()]
-	if name != "" {
+	if name, ok := namedCurvesByOid[oid.String()]; ok {
 		return name
 	}
 	return oid.String()

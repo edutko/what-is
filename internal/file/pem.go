@@ -3,6 +3,7 @@ package file
 import (
 	"crypto/ecdh"
 	"crypto/ecdsa"
+	"crypto/ed25519"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/asn1"
@@ -10,7 +11,6 @@ import (
 	"errors"
 	"strings"
 
-	"golang.org/x/crypto/ed25519"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -20,6 +20,18 @@ func parsePEMBlock(b *pem.Block) Info {
 	switch strings.ToUpper(b.Type) {
 	case "CERTIFICATE", "TRUSTED CERTIFICATE":
 		if info, err := parseCertificate(b.Bytes); err != nil {
+			return UnknownPEMData
+		} else {
+			return info
+		}
+	case "RSA PUBLIC KEY":
+		if info, err := parsePKCS1PublicKey(b.Bytes); err != nil {
+			return UnknownPEMData
+		} else {
+			return info
+		}
+	case "PUBLIC KEY":
+		if info, err := parsePKIXPublicKey(b.Bytes); err != nil {
 			return UnknownPEMData
 		} else {
 			return info
@@ -82,6 +94,44 @@ func parseCertificate(der []byte) (Info, error) {
 			{"Signature algorithm", c.SignatureAlgorithm.String()},
 		},
 	}, nil
+}
+
+func parsePKCS1PublicKey(der []byte) (Info, error) {
+	info := Info{
+		Description: "PKCS#1 public key",
+	}
+
+	k, err := x509.ParsePKCS1PublicKey(der)
+	if err != nil {
+		return UnknownPEMData, err
+	}
+
+	info.Attributes = rsaPublicKeyAttributes(*k)
+
+	return info, nil
+}
+
+func parsePKIXPublicKey(der []byte) (Info, error) {
+	info := Info{
+		Description: "PKIX public key",
+	}
+
+	k, err := x509.ParsePKIXPublicKey(der)
+	if err != nil {
+		return UnknownPEMData, err
+	}
+
+	if rk, ok := k.(*rsa.PublicKey); ok {
+		info.Attributes = rsaPublicKeyAttributes(*rk)
+	} else if eck, ok := k.(*ecdsa.PublicKey); ok {
+		info.Attributes = ecdsaPublicKeyAttributes(*eck)
+	} else if edk, ok := k.(ed25519.PublicKey); ok {
+		info.Attributes = ed25519PublicKeyAttributes(edk)
+	} else if dhk, ok := k.(*ecdh.PublicKey); ok {
+		info.Attributes = ecdhPublicKeyAttributes(*dhk)
+	}
+
+	return info, nil
 }
 
 func parsePKCS8PrivateKey(der []byte) (Info, error) {
@@ -202,7 +252,6 @@ func parseOpenSSHPrivateKey(der []byte) (Info, error) {
 		return info, errors.New("ssh: malformed OpenSSH key")
 	}
 
-	// TODO: collect additional attributes (e.g. RSA key size)
 	info.Attributes = append(info.Attributes, sshPublicKeyAttributes(pk, "")...)
 
 	return info, nil
