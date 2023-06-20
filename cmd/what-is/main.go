@@ -30,29 +30,30 @@ func main() {
 	}
 
 	f := flag.Arg(0)
-	if f == "" {
-		flag.Usage()
-		os.Exit(1)
-	}
-
-	s, err := os.Stat(f)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	depth := 0
-	if *recursive {
-		depth = maxDepth
-	}
-
-	if s.IsDir() {
-		if !*recursive {
-			_, _ = fmt.Fprintf(os.Stderr, "error: \"%s\" is a directory. Specify -r to recurse into directories.", f)
-			os.Exit(1)
-		}
-		inspectDirectory(f, depth)
+	if f == "" || f == "-" {
+		inspectStdin()
 	} else {
-		inspectFile(f)
+		for _, f := range flag.Args() {
+			s, err := os.Stat(f)
+			if err != nil {
+				log.Fatalln(err)
+			}
+
+			depth := 0
+			if *recursive {
+				depth = maxDepth
+			}
+
+			if s.IsDir() {
+				if !*recursive {
+					_, _ = fmt.Fprintf(os.Stderr, "error: \"%s\" is a directory. Specify -r to recurse into directories.", f)
+					os.Exit(1)
+				}
+				inspectDirectory(f, depth)
+			} else {
+				inspectFile(f)
+			}
+		}
 	}
 }
 
@@ -76,10 +77,25 @@ func inspectDirectory(f string, remainingDepth int) {
 	}
 }
 
-func inspectFile(f string) {
-	info, err := file.Inspect(file.Info{Path: f})
+func inspectFile(filePath string) {
+	f, err := os.Open(filePath)
+	defer func() {
+		_ = f.Close()
+	}()
+
+	info, err := file.Inspect(f)
 	if err != nil {
-		log.Printf("error processing file \"%s\": %v", f, err)
+		log.Printf("error processing file \"%s\": %v", filePath, err)
+	}
+
+	fmt.Printf("%s: ", info.Path)
+	printInfo(info, 0)
+}
+
+func inspectStdin() {
+	info, err := file.Inspect(os.Stdin)
+	if err != nil {
+		log.Printf("error processing input: %v", err)
 	}
 
 	fmt.Printf("%s: ", info.Path)

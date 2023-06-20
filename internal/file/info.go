@@ -3,6 +3,8 @@ package file
 import (
 	"errors"
 	"fmt"
+	"io"
+	"log"
 	"os"
 
 	"github.com/edutko/what-is/internal/units"
@@ -25,47 +27,35 @@ var ErrNotRegularFile = errors.New("only regular files are supported")
 
 var MaxReadSize = 128 * units.Megabyte
 
-func Inspect(info Info) (Info, error) {
-	s, err := os.Stat(info.Path)
+func Inspect(f *os.File) (Info, error) {
+	info := Info{Path: f.Name()}
+
+	s, err := f.Stat()
 	if err != nil {
 		return info, fmt.Errorf("os.Stat: %w", err)
 	}
 
-	if s.Mode()&os.ModeType != 0 {
-		return info, ErrNotRegularFile
+	if s.Mode().IsRegular() {
+		info.Size = s.Size()
 	}
 
-	info.Size = s.Size()
-
-	var data []byte
-	if s.Size() > MaxReadSize {
-		f, err := os.Open(info.Path)
-		if err != nil {
-			return info, fmt.Errorf("os.Open(\"%s\"): %w", info.Path, err)
-		}
-		defer func() {
-			_ = f.Close()
-		}()
-		data = make([]byte, MaxReadSize)
-		_, err = f.Read(data)
-		if err != nil {
-			return info, fmt.Errorf("f.Read: %w", err)
-		}
-	} else {
-		data, err = os.ReadFile(info.Path)
-		if err != nil {
-			return info, fmt.Errorf("os.ReadFile(\"%s\"): %w", info.Path, err)
-		}
+	r := io.LimitReader(f, MaxReadSize)
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return info, fmt.Errorf("f.Read: %w", err)
 	}
 
 	for _, parse := range candidateParsers(info, data) {
-		finalInfo, err := parse(info, data)
-		if err == nil {
-			return finalInfo, nil
+		var i Info
+		i, err := parse(info, data)
+		if err != nil {
+			log.Println(err)
+		} else {
+			return i, nil
 		}
 	}
 
-	return Info{Path: info.Path, Description: "unknown file type"}, nil
+	return info, nil
 }
 
 func candidateParsers(info Info, data []byte) []Parser {
