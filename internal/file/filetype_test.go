@@ -65,9 +65,10 @@ func TestFiletype_MatchesMagic(t *testing.T) {
 		{nil, []byte{}, false},
 		{[]string{""}, []byte{}, true},
 		{[]string{""}, []byte{0x00, 0x01}, true},
+		{[]string{"\x01\x02\x03"}, []byte{0x01, 0x02}, false},
 
-		{[]string{"\xfe\xed\xfe\xed"}, fileContents("keystore.jks"), true},
-		{[]string{"\xfe\xed\xfa\xce"}, fileContents("keystore.jks"), false},
+		{[]string{"\xfe\xed\xfe\xed"}, fileContents("java/keystore.jks"), true},
+		{[]string{"\xfe\xed\xfa\xce"}, fileContents("java/keystore.jks"), false},
 	}
 
 	for _, tc := range testCases {

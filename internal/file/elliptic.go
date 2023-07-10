@@ -33,3 +33,17 @@ func curveNameFromOID(oid asn1.ObjectIdentifier) string {
 	}
 	return oid.String()
 }
+
+var primeField = asn1.ObjectIdentifier{1, 2, 840, 10045, 1, 1}
+var characteristicTwoField = asn1.ObjectIdentifier{1, 2, 840, 10045, 1, 2}
+
+func fieldTypeFromOid(oid asn1.ObjectIdentifier) string {
+	switch oid.String() {
+	case primeField.String():
+		return "prime field"
+	case characteristicTwoField.String():
+		return "characteristic 2 field"
+	default:
+		return oid.String()
+	}
+}

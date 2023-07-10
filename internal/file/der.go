@@ -1,13 +1,17 @@
 package file
 
 import (
+	"crypto/dsa"
 	"crypto/ecdh"
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/asn1"
+	"encoding/binary"
 	"errors"
+	"fmt"
+	"math/big"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -28,8 +32,6 @@ func parseDERData(b []byte) Info {
 	} else if info, err := parseRSAPrivateKey(b); err == nil {
 		return info
 	} else if info, err := parseDSAPrivateKey(b); err == nil {
-		return info
-	} else if info, err := parseECParameters(b); err == nil {
 		return info
 	} else {
 		return UnknownASN1Data
@@ -87,7 +89,9 @@ func parsePKIXPublicKey(der []byte) (Info, error) {
 		return UnknownASN1Data, err
 	}
 
-	if rk, ok := k.(*rsa.PublicKey); ok {
+	if rk, ok := k.(*dsa.PublicKey); ok {
+		info.Attributes = dsaPublicKeyAttributes(*rk)
+	} else if rk, ok := k.(*rsa.PublicKey); ok {
 		info.Attributes = rsaPublicKeyAttributes(*rk)
 	} else if eck, ok := k.(*ecdsa.PublicKey); ok {
 		info.Attributes = ecdsaPublicKeyAttributes(*eck)
@@ -123,17 +127,56 @@ func parsePKCS8PrivateKey(der []byte) (Info, error) {
 	return info, nil
 }
 
+// http://www.secg.org/sec1-v2.pdf
 func parseECParameters(der []byte) (Info, error) {
 	info := Info{
 		Description: "EC parameters",
 	}
 
+	type FieldElement []byte
+	var ecParams struct {
+		Version int
+		FieldId struct {
+			FieldType  asn1.ObjectIdentifier
+			Parameters asn1.RawValue
+		}
+		Curve struct {
+			A    FieldElement
+			B    FieldElement
+			Seed asn1.BitString `asn1:"optional"`
+		}
+		BasePoint FieldElement
+		Order     *big.Int
+		Cofactor  *big.Int              `asn1:"optional"`
+		Hash      asn1.ObjectIdentifier `asn1:"optional"`
+	}
+	_, err := asn1.Unmarshal(der, &ecParams)
+	if err == nil {
+		info.Attributes = append(info.Attributes, Attribute{"Field type", fieldTypeFromOid(ecParams.FieldId.FieldType)})
+		if ecParams.FieldId.FieldType.Equal(primeField) {
+			var prime *big.Int
+			if _, err := asn1.Unmarshal(ecParams.FieldId.Parameters.FullBytes, &prime); err == nil {
+				info.Attributes = append(info.Attributes, Attribute{"Prime size", fmt.Sprintf("%d bits", prime.BitLen())})
+			}
+		}
+		if ecParams.FieldId.FieldType.Equal(characteristicTwoField) {
+			var field struct {
+				FieldSize *big.Int
+			}
+			if _, err := asn1.Unmarshal(ecParams.FieldId.Parameters.FullBytes, &field); err == nil {
+				info.Attributes = append(info.Attributes, Attribute{"Field size", fmt.Sprintf("2^%d", field.FieldSize)})
+			}
+		}
+		return info, nil
+	}
+
 	var curveOid asn1.ObjectIdentifier
 	if _, err := asn1.Unmarshal(der, &curveOid); err == nil {
 		info.Attributes = append(info.Attributes, Attribute{"Named curve", curveNameFromOID(curveOid)})
+		return info, nil
 	}
 
-	return info, nil
+	return UnknownASN1Data, err
 }
 
 func parseECPrivateKey(der []byte) (Info, error) {
@@ -167,7 +210,7 @@ func parseDSAPrivateKey(der []byte) (Info, error) {
 	}
 
 	return Info{
-		Description: "PKCS#1 private key",
+		Description: "DSA private key",
 		Attributes:  dsaPrivateKeyAttributes(k),
 	}, nil
 }
@@ -186,7 +229,7 @@ func parseOpenSSHPrivateKey(der []byte) (Info, error) {
 	var w struct {
 		CipherName   string
 		KdfName      string
-		KdfOpts      string
+		KdfOpts      []byte
 		NumKeys      uint32
 		PubKey       []byte
 		PrivKeyBlock []byte
@@ -201,24 +244,31 @@ func parseOpenSSHPrivateKey(der []byte) (Info, error) {
 		return info, errors.New("ssh: multi-key files are not supported")
 	}
 
+	pk, err := ssh.ParsePublicKey(w.PubKey)
+	if err != nil {
+		return info, errors.New("ssh: malformed OpenSSH key")
+	}
+	info.Attributes = append(info.Attributes, sshPublicKeyAttributes(pk, "")...)
+
 	if w.CipherName != "none" {
 		info.Description = "OpenSSH private key (encrypted)"
 		info.Attributes = append(info.Attributes,
 			Attribute{"Cipher", w.CipherName},
 			Attribute{"KDF", w.KdfName},
-			Attribute{"KDF options", w.KdfOpts},
 		)
-	}
-
-	pk, err := ssh.ParsePublicKey(w.PubKey)
-	if err != nil {
-		if w.CipherName != "none" {
-			return info, x509.IncorrectPasswordError
+		if _, rounds, err := parseKdfOptions(w.KdfOpts); err == nil {
+			info.Attributes = append(info.Attributes, Attribute{"KDF rounds", fmt.Sprintf("%d", rounds)})
 		}
-		return info, errors.New("ssh: malformed OpenSSH key")
 	}
-
-	info.Attributes = append(info.Attributes, sshPublicKeyAttributes(pk, "")...)
 
 	return info, nil
+}
+
+func parseKdfOptions(opts []byte) ([]byte, uint32, error) {
+	saltLen := binary.BigEndian.Uint32(opts[:4])
+	if 4+saltLen+4 != uint32(len(opts)) {
+		return nil, 0, fmt.Errorf("invalid KDF options")
+	}
+	rounds := binary.BigEndian.Uint32(opts[4+saltLen:])
+	return opts[4 : 4+saltLen], rounds, nil
 }

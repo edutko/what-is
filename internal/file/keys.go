@@ -79,8 +79,8 @@ func ed25519PrivateKeyAttributes(k ed25519.PrivateKey) []Attribute {
 
 func ed25519PublicKeyAttributes(_ ed25519.PublicKey) []Attribute {
 	return []Attribute{
-		{"Algorithm", "Ed25519"},
-		{"Curve", "Curve25519"},
+		{"Algorithm", "EdDSA"},
+		{"Curve", "Ed25519"},
 	}
 }
 
