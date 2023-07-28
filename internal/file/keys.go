@@ -8,6 +8,8 @@ import (
 	"crypto/ed25519"
 	"crypto/rsa"
 	"fmt"
+
+	"github.com/edutko/what-is/internal/file/names"
 )
 
 func cryptoPublicKeyAttributes(k crypto.PublicKey) []Attribute {
@@ -56,7 +58,7 @@ func ecdhPublicKeyAttributes(k ecdh.PublicKey) []Attribute {
 	}
 
 	if c, ok := k.Curve().(fmt.Stringer); ok {
-		attrs = append(attrs, Attribute{"Curve", c.String()})
+		attrs = append(attrs, Attribute{"Curve", names.Curve(c.String())})
 	}
 
 	return attrs
@@ -69,7 +71,7 @@ func ecdsaPrivateKeyAttributes(k *ecdsa.PrivateKey) []Attribute {
 func ecdsaPublicKeyAttributes(k ecdsa.PublicKey) []Attribute {
 	return []Attribute{
 		{"Algorithm", "ECDSA"},
-		{"Curve", k.Curve.Params().Name},
+		{"Curve", names.FromCurveParams(k.Curve.Params())},
 	}
 }
 
@@ -80,7 +82,7 @@ func ed25519PrivateKeyAttributes(k ed25519.PrivateKey) []Attribute {
 func ed25519PublicKeyAttributes(_ ed25519.PublicKey) []Attribute {
 	return []Attribute{
 		{"Algorithm", "EdDSA"},
-		{"Curve", "Ed25519"},
+		{"Curve", names.Curve("ed25519")},
 	}
 }
 

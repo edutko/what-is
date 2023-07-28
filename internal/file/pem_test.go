@@ -66,21 +66,21 @@ func Test_parsePEMBlock(t *testing.T) {
 			Description: "PKCS#8 private key",
 			Attributes: []Attribute{
 				{Name: "Algorithm", Value: "ECDSA"},
-				{Name: "Curve", Value: "P-256"},
+				{Name: "Curve", Value: "P-256 (secp256r1, prime256v1)"},
 			}},
 		},
 		{fileContents("x509/pem/prime256v1-ec.key"), Info{
 			Description: "EC private key",
 			Attributes: []Attribute{
 				{Name: "Algorithm", Value: "ECDSA"},
-				{Name: "Curve", Value: "P-256"},
+				{Name: "Curve", Value: "P-256 (secp256r1, prime256v1)"},
 			}},
 		},
 		{fileContents("x509/pem/prime256v1.pub"), Info{
 			Description: "PKIX public key",
 			Attributes: []Attribute{
 				{Name: "Algorithm", Value: "ECDSA"},
-				{Name: "Curve", Value: "P-256"},
+				{Name: "Curve", Value: "P-256 (secp256r1, prime256v1)"},
 			}},
 		},
 		{fileContents("x509/pem/prime256v1.param"), Info{
@@ -122,7 +122,7 @@ func Test_parsePEMBlock(t *testing.T) {
 			Attributes: []Attribute{
 				{Name: "Type", Value: "ecdsa-sha2-nistp384"},
 				{Name: "Algorithm", Value: "ECDSA"},
-				{Name: "Curve", Value: "P-384"},
+				{Name: "Curve", Value: "P-384 (secp384r1)"},
 			}},
 		},
 		{fileContents("ssh/id_ecdsa_256_enc"), Info{
@@ -130,7 +130,7 @@ func Test_parsePEMBlock(t *testing.T) {
 			Attributes: []Attribute{
 				{Name: "Type", Value: "ecdsa-sha2-nistp256"},
 				{Name: "Algorithm", Value: "ECDSA"},
-				{Name: "Curve", Value: "P-256"},
+				{Name: "Curve", Value: "P-256 (secp256r1, prime256v1)"},
 				{Name: "Cipher", Value: "aes256-ctr"},
 				{Name: "KDF", Value: "bcrypt"},
 				{Name: "KDF rounds", Value: "16"},

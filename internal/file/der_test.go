@@ -64,21 +64,21 @@ func Test_parseDERData(t *testing.T) {
 			Description: "PKCS#8 private key",
 			Attributes: []Attribute{
 				{Name: "Algorithm", Value: "ECDSA"},
-				{Name: "Curve", Value: "P-256"},
+				{Name: "Curve", Value: "P-256 (secp256r1, prime256v1)"},
 			}},
 		},
 		{fileContents("x509/der/prime256v1-ec.key"), Info{
 			Description: "EC private key",
 			Attributes: []Attribute{
 				{Name: "Algorithm", Value: "ECDSA"},
-				{Name: "Curve", Value: "P-256"},
+				{Name: "Curve", Value: "P-256 (secp256r1, prime256v1)"},
 			}},
 		},
 		{fileContents("x509/der/prime256v1.pub"), Info{
 			Description: "PKIX public key",
 			Attributes: []Attribute{
 				{Name: "Algorithm", Value: "ECDSA"},
-				{Name: "Curve", Value: "P-256"},
+				{Name: "Curve", Value: "P-256 (secp256r1, prime256v1)"},
 			}},
 		},
 		{fileContents("x509/der/ed25519.key"), Info{
@@ -109,7 +109,7 @@ func Test_parseDERData(t *testing.T) {
 					Description: "Public key",
 					Attributes: []Attribute{
 						{Name: "Algorithm", Value: "ECDSA"},
-						{Name: "Curve", Value: "P-256"},
+						{Name: "Curve", Value: "P-256 (secp256r1, prime256v1)"},
 					},
 				},
 			}},
