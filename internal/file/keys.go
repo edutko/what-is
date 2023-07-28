@@ -9,7 +9,7 @@ import (
 	"crypto/rsa"
 	"fmt"
 
-	"github.com/edutko/what-is/internal/file/names"
+	"github.com/edutko/what-is/internal/names"
 )
 
 func cryptoPublicKeyAttributes(k crypto.PublicKey) []Attribute {
@@ -43,7 +43,7 @@ func dsaPrivateKeyAttributes(k *dsa.PrivateKey) []Attribute {
 
 func dsaPublicKeyAttributes(k dsa.PublicKey) []Attribute {
 	return []Attribute{
-		{"Algorithm", "DSA"},
+		{"Algorithm", names.DSA},
 		{"Size", fmt.Sprintf("%d bits", k.P.BitLen())},
 	}
 }
@@ -54,7 +54,7 @@ func ecdhPrivateKeyAttributes(k *ecdh.PrivateKey) []Attribute {
 
 func ecdhPublicKeyAttributes(k ecdh.PublicKey) []Attribute {
 	attrs := []Attribute{
-		{"Algorithm", "ECDH"},
+		{"Algorithm", names.ECDH},
 	}
 
 	if c, ok := k.Curve().(fmt.Stringer); ok {
@@ -70,7 +70,7 @@ func ecdsaPrivateKeyAttributes(k *ecdsa.PrivateKey) []Attribute {
 
 func ecdsaPublicKeyAttributes(k ecdsa.PublicKey) []Attribute {
 	return []Attribute{
-		{"Algorithm", "ECDSA"},
+		{"Algorithm", names.ECDSA},
 		{"Curve", names.FromCurveParams(k.Curve.Params())},
 	}
 }
@@ -81,7 +81,7 @@ func ed25519PrivateKeyAttributes(k ed25519.PrivateKey) []Attribute {
 
 func ed25519PublicKeyAttributes(_ ed25519.PublicKey) []Attribute {
 	return []Attribute{
-		{"Algorithm", "EdDSA"},
+		{"Algorithm", names.EdDSA},
 		{"Curve", names.Curve("ed25519")},
 	}
 }
@@ -92,7 +92,7 @@ func rsaPrivateKeyAttributes(k *rsa.PrivateKey) []Attribute {
 
 func rsaPublicKeyAttributes(k rsa.PublicKey) []Attribute {
 	return []Attribute{
-		{"Algorithm", "RSA"},
+		{"Algorithm", names.RSA},
 		{"Size", fmt.Sprintf("%d bits", k.Size()*8)},
 	}
 }

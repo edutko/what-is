@@ -14,6 +14,9 @@ import (
 	"math/big"
 
 	"golang.org/x/crypto/ssh"
+
+	"github.com/edutko/what-is/internal/names"
+	"github.com/edutko/what-is/internal/oid"
 )
 
 var UnknownASN1Data = Info{Description: "unknown ASN.1 data"}
@@ -152,14 +155,14 @@ func parseECParameters(der []byte) (Info, error) {
 	}
 	_, err := asn1.Unmarshal(der, &ecParams)
 	if err == nil {
-		info.Attributes = append(info.Attributes, Attribute{"Field type", fieldTypeFromOid(ecParams.FieldId.FieldType)})
-		if ecParams.FieldId.FieldType.Equal(primeField) {
+		info.Attributes = append(info.Attributes, Attribute{"Field type", names.FieldTypeFromOid(ecParams.FieldId.FieldType)})
+		if ecParams.FieldId.FieldType.Equal(oid.PrimeField) {
 			var prime *big.Int
 			if _, err := asn1.Unmarshal(ecParams.FieldId.Parameters.FullBytes, &prime); err == nil {
 				info.Attributes = append(info.Attributes, Attribute{"Prime size", fmt.Sprintf("%d bits", prime.BitLen())})
 			}
 		}
-		if ecParams.FieldId.FieldType.Equal(characteristicTwoField) {
+		if ecParams.FieldId.FieldType.Equal(oid.CharacteristicTwoField) {
 			var field struct {
 				FieldSize *big.Int
 			}
@@ -172,7 +175,7 @@ func parseECParameters(der []byte) (Info, error) {
 
 	var curveOid asn1.ObjectIdentifier
 	if _, err := asn1.Unmarshal(der, &curveOid); err == nil {
-		info.Attributes = append(info.Attributes, Attribute{"Named curve", curveNameFromOID(curveOid)})
+		info.Attributes = append(info.Attributes, Attribute{"Named curve", names.CurveNameFromOID(curveOid)})
 		return info, nil
 	}
 
