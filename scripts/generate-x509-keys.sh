@@ -52,6 +52,8 @@ do
   openssl ec -in "$OUTDIR/pem/${curve}-ec-withparams.key" -outform der -out "$OUTDIR/der/${curve}-ec.key"
   openssl pkcs8 -in "$OUTDIR/pem/${curve}-ec.key" -topk8 -nocrypt -outform pem -out "$OUTDIR/pem/${curve}.key"
   openssl pkcs8 -in "$OUTDIR/pem/${curve}-ec.key" -topk8 -nocrypt -outform der -out "$OUTDIR/der/${curve}.key"
+  openssl pkcs8 -in "$OUTDIR/pem/${curve}-ec-explicit-withparams.key" -topk8 -nocrypt -outform pem -out "$OUTDIR/pem/${curve}-explicit.key"
+  openssl pkcs8 -in "$OUTDIR/pem/${curve}-ec-explicit-withparams.key" -topk8 -nocrypt -outform der -out "$OUTDIR/der/${curve}-explicit.key"
 
   openssl pkey -in "$OUTDIR/pem/${curve}.key" -outform pem -pubout -out "$OUTDIR/pem/${curve}.pub"
   openssl pkey -in "$OUTDIR/pem/${curve}.key" -outform der -pubout -out "$OUTDIR/der/${curve}.pub"
