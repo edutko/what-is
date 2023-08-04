@@ -15,10 +15,10 @@ import (
 type Parser func(info Info, data []byte) (Info, error)
 
 func ASN1File(info Info, data []byte) (Info, error) {
-	derInfo := parseDERData(data)
-	info.Description = derInfo.Description
-	info.Attributes = derInfo.Attributes
-	info.Children = derInfo.Children
+	asn1nfo := parseASN1Data(data)
+	info.Description = asn1nfo.Description
+	info.Attributes = asn1nfo.Attributes
+	info.Children = asn1nfo.Children
 	return info, nil
 }
 

@@ -1,13 +1,16 @@
 package file
 
-import "github.com/edutko/what-is/internal/asn1utils"
+import (
+	"encoding/asn1"
+)
 
 type Identifier func(name string, data []byte, fileSize int64) bool
 
 func IsASN1(_ string, data []byte, fileSize int64) bool {
-	_, l, err := asn1utils.ParseTagAndLength(data)
-	if err != nil {
+	var something asn1.RawValue
+	extra, err := asn1.Unmarshal(data, &something)
+	if err != nil || len(extra) != 0 {
 		return false
 	}
-	return int64(l) == fileSize
+	return true
 }
