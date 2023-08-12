@@ -1,20 +1,14 @@
 package file
 
 import (
-	"crypto/dsa"
-	"crypto/ecdh"
-	"crypto/ecdsa"
-	"crypto/ed25519"
-	"crypto/rsa"
 	"crypto/x509"
 	"encoding/asn1"
-	"encoding/binary"
 	"errors"
 	"fmt"
-	"math/big"
 
 	"golang.org/x/crypto/ssh"
 
+	"github.com/edutko/what-is/internal/asn1struct"
 	"github.com/edutko/what-is/internal/names"
 	"github.com/edutko/what-is/internal/oid"
 )
@@ -24,15 +18,15 @@ var UnknownASN1Data = Info{Description: "unknown ASN.1 data"}
 func parseDERData(b []byte) Info {
 	if info, err := parseCertificate(b); err == nil {
 		return info
-	} else if info, err := parsePKCS1PublicKey(b); err == nil {
+	} else if info, err := parsePKCS8PrivateKey(b); err == nil {
 		return info
 	} else if info, err := parsePKIXPublicKey(b); err == nil {
 		return info
-	} else if info, err := parsePKCS8PrivateKey(b); err == nil {
+	} else if info, err := parsePKCS1PublicKey(b); err == nil {
 		return info
 	} else if info, err := parseECPrivateKey(b); err == nil {
 		return info
-	} else if info, err := parseRSAPrivateKey(b); err == nil {
+	} else if info, err := parsePKCS1PrivateKey(b); err == nil {
 		return info
 	} else if info, err := parseDSAPrivateKey(b); err == nil {
 		return info
@@ -43,6 +37,12 @@ func parseDERData(b []byte) Info {
 
 func parseCertificate(der []byte) (Info, error) {
 	c, err := x509.ParseCertificate(der)
+	if err != nil {
+		return UnknownASN1Data, err
+	}
+
+	var pubKeyInfo asn1struct.PKIXPublicKey
+	_, err = asn1.Unmarshal(c.RawSubjectPublicKeyInfo, &pubKeyInfo)
 	if err != nil {
 		return UnknownASN1Data, err
 	}
@@ -59,7 +59,7 @@ func parseCertificate(der []byte) (Info, error) {
 		Children: []Info{
 			{
 				Description: "Public key",
-				Attributes:  cryptoPublicKeyAttributes(c.PublicKey),
+				Attributes:  pkixPublicKeyAttributes(pubKeyInfo),
 			},
 		},
 	}
@@ -72,12 +72,13 @@ func parsePKCS1PublicKey(der []byte) (Info, error) {
 		Description: "PKCS#1 public key",
 	}
 
-	k, err := x509.ParsePKCS1PublicKey(der)
+	var k asn1struct.PKCS1PublicKey
+	_, err := asn1.Unmarshal(der, &k)
 	if err != nil {
 		return UnknownASN1Data, err
 	}
 
-	info.Attributes = rsaPublicKeyAttributes(*k)
+	info.Attributes = pkcs1PublicKeyAttributes(k)
 
 	return info, nil
 }
@@ -87,22 +88,13 @@ func parsePKIXPublicKey(der []byte) (Info, error) {
 		Description: "PKIX public key",
 	}
 
-	k, err := x509.ParsePKIXPublicKey(der)
+	var k asn1struct.PKIXPublicKey
+	_, err := asn1.Unmarshal(der, &k)
 	if err != nil {
 		return UnknownASN1Data, err
 	}
 
-	if rk, ok := k.(*dsa.PublicKey); ok {
-		info.Attributes = dsaPublicKeyAttributes(*rk)
-	} else if rk, ok := k.(*rsa.PublicKey); ok {
-		info.Attributes = rsaPublicKeyAttributes(*rk)
-	} else if eck, ok := k.(*ecdsa.PublicKey); ok {
-		info.Attributes = ecdsaPublicKeyAttributes(*eck)
-	} else if edk, ok := k.(ed25519.PublicKey); ok {
-		info.Attributes = ed25519PublicKeyAttributes(edk)
-	} else if dhk, ok := k.(*ecdh.PublicKey); ok {
-		info.Attributes = ecdhPublicKeyAttributes(*dhk)
-	}
+	info.Attributes = pkixPublicKeyAttributes(k)
 
 	return info, nil
 }
@@ -112,22 +104,57 @@ func parsePKCS8PrivateKey(der []byte) (Info, error) {
 		Description: "PKCS#8 private key",
 	}
 
-	k, err := x509.ParsePKCS8PrivateKey(der)
+	var k asn1struct.PKCS8PrivateKey
+	_, err := asn1.Unmarshal(der, &k)
 	if err != nil {
 		return UnknownASN1Data, err
 	}
 
-	if rk, ok := k.(*rsa.PrivateKey); ok {
-		info.Attributes = rsaPrivateKeyAttributes(rk)
-	} else if eck, ok := k.(*ecdsa.PrivateKey); ok {
-		info.Attributes = ecdsaPrivateKeyAttributes(eck)
-	} else if edk, ok := k.(ed25519.PrivateKey); ok {
-		info.Attributes = ed25519PrivateKeyAttributes(edk)
-	} else if dhk, ok := k.(*ecdh.PrivateKey); ok {
-		info.Attributes = ecdhPrivateKeyAttributes(dhk)
+	switch {
+	case k.Algorithm.Algorithm.Equal(oid.DSA):
+		info.Attributes = []Attribute{{"Algorithm", names.DSA}}
+		i, err := parseDSAParameters(k.Algorithm.Parameters.FullBytes)
+		if err == nil {
+			info.Attributes = append(info.Attributes, i.Attributes...)
+		}
+	case k.Algorithm.Algorithm.Equal(oid.RSAEncryption):
+		i, err := parsePKCS1PrivateKey(k.PrivateKey)
+		if err == nil {
+			info.Attributes = i.Attributes
+		}
+	case k.Algorithm.Algorithm.Equal(oid.ECPublicKey):
+		info.Attributes = []Attribute{{"Algorithm", names.ECDSA}}
+		i, err := parseECParameters(k.Algorithm.Parameters.FullBytes)
+		if err == nil {
+			info.Attributes = append(info.Attributes, i.Attributes...)
+		}
+	case k.Algorithm.Algorithm.Equal(oid.Ed25519):
+		info.Attributes = ed25519PrivateKeyAttributes()
+	case k.Algorithm.Algorithm.Equal(oid.Ed448):
+		info.Attributes = ed448PrivateKeyAttributes()
+	case k.Algorithm.Algorithm.Equal(oid.X25519):
+		info.Attributes = x25519PrivateKeyAttributes()
+	case k.Algorithm.Algorithm.Equal(oid.X448):
+		info.Attributes = x448PrivateKeyAttributes()
 	}
 
 	return info, nil
+}
+
+func parseDSAParameters(der []byte) (Info, error) {
+	info := Info{
+		Description: "DSA parameters",
+	}
+
+	type FieldElement []byte
+	var p asn1struct.DSAParameters
+	_, err := asn1.Unmarshal(der, &p)
+	if err == nil {
+		info.Attributes = dsaParameterAttributes(p)
+		return info, nil
+	}
+
+	return UnknownASN1Data, err
 }
 
 // http://www.secg.org/sec1-v2.pdf
@@ -136,46 +163,17 @@ func parseECParameters(der []byte) (Info, error) {
 		Description: "EC parameters",
 	}
 
-	type FieldElement []byte
-	var ecParams struct {
-		Version int
-		FieldId struct {
-			FieldType  asn1.ObjectIdentifier
-			Parameters asn1.RawValue
-		}
-		Curve struct {
-			A    FieldElement
-			B    FieldElement
-			Seed asn1.BitString `asn1:"optional"`
-		}
-		BasePoint FieldElement
-		Order     *big.Int
-		Cofactor  *big.Int              `asn1:"optional"`
-		Hash      asn1.ObjectIdentifier `asn1:"optional"`
-	}
-	_, err := asn1.Unmarshal(der, &ecParams)
-	if err == nil {
-		info.Attributes = append(info.Attributes, Attribute{"Field type", names.FieldTypeFromOid(ecParams.FieldId.FieldType)})
-		if ecParams.FieldId.FieldType.Equal(oid.PrimeField) {
-			var prime *big.Int
-			if _, err := asn1.Unmarshal(ecParams.FieldId.Parameters.FullBytes, &prime); err == nil {
-				info.Attributes = append(info.Attributes, Attribute{"Prime size", fmt.Sprintf("%d bits", prime.BitLen())})
-			}
-		}
-		if ecParams.FieldId.FieldType.Equal(oid.CharacteristicTwoField) {
-			var field struct {
-				FieldSize *big.Int
-			}
-			if _, err := asn1.Unmarshal(ecParams.FieldId.Parameters.FullBytes, &field); err == nil {
-				info.Attributes = append(info.Attributes, Attribute{"Field size", fmt.Sprintf("2^%d", field.FieldSize)})
-			}
-		}
+	var curveOid asn1.ObjectIdentifier
+	if _, err := asn1.Unmarshal(der, &curveOid); err == nil {
+		info.Attributes = namedCurveAttributes(curveOid)
 		return info, nil
 	}
 
-	var curveOid asn1.ObjectIdentifier
-	if _, err := asn1.Unmarshal(der, &curveOid); err == nil {
-		info.Attributes = append(info.Attributes, Attribute{"Named curve", names.CurveNameFromOID(curveOid)})
+	type FieldElement []byte
+	var p asn1struct.ECParameters
+	_, err := asn1.Unmarshal(der, &p)
+	if err == nil {
+		info.Attributes = ecExplicitParameterAttributes(p)
 		return info, nil
 	}
 
@@ -183,31 +181,40 @@ func parseECParameters(der []byte) (Info, error) {
 }
 
 func parseECPrivateKey(der []byte) (Info, error) {
-	k, err := x509.ParseECPrivateKey(der)
+	info := Info{
+		Description: "EC private key",
+	}
+
+	var k asn1struct.ECPrivateKey
+	_, err := asn1.Unmarshal(der, &k)
 	if err != nil {
 		return UnknownASN1Data, err
 	}
 
-	return Info{
-		Description: "EC private key",
-		Attributes:  ecdsaPrivateKeyAttributes(k),
-	}, nil
+	info.Attributes = ecPrivateKeyAttributes(k)
+
+	return info, nil
 }
 
-func parseRSAPrivateKey(der []byte) (Info, error) {
-	k, err := x509.ParsePKCS1PrivateKey(der)
+func parsePKCS1PrivateKey(der []byte) (Info, error) {
+	info := Info{
+		Description: "PKCS#1 private key",
+	}
+
+	var k asn1struct.PKCS1PrivateKey
+	_, err := asn1.Unmarshal(der, &k)
 	if err != nil {
 		return UnknownASN1Data, err
 	}
 
-	return Info{
-		Description: "PKCS#1 private key",
-		Attributes:  rsaPrivateKeyAttributes(k),
-	}, nil
+	info.Attributes = pkcs1PrivateKeyAttributes(k)
+
+	return info, nil
 }
 
 func parseDSAPrivateKey(der []byte) (Info, error) {
-	k, err := ssh.ParseDSAPrivateKey(der)
+	var k asn1struct.DSAPrivateKey
+	_, err := asn1.Unmarshal(der, &k)
 	if err != nil {
 		return UnknownASN1Data, err
 	}
@@ -265,13 +272,4 @@ func parseOpenSSHPrivateKey(der []byte) (Info, error) {
 	}
 
 	return info, nil
-}
-
-func parseKdfOptions(opts []byte) ([]byte, uint32, error) {
-	saltLen := binary.BigEndian.Uint32(opts[:4])
-	if 4+saltLen+4 != uint32(len(opts)) {
-		return nil, 0, fmt.Errorf("invalid KDF options")
-	}
-	rounds := binary.BigEndian.Uint32(opts[4+saltLen:])
-	return opts[4 : 4+saltLen], rounds, nil
 }

@@ -11,7 +11,7 @@ do
 
   openssl dsaparam -out "$OUTDIR/pem/dsa-${bits}.param" $bits
   openssl gendsa -out "$OUTDIR/pem/dsa-${bits}.key" "$OUTDIR/pem/dsa-${bits}.param"
-  openssl pkey -in "$OUTDIR/pem/dsa-${bits}.key" -outform der -out "$OUTDIR/der/dsa-${bits}.key"
+  openssl pkcs8 -in "$OUTDIR/pem/dsa-${bits}.key" -topk8 -nocrypt -outform der -out "$OUTDIR/der/dsa-${bits}.key"
   openssl dsa -in "$OUTDIR/pem/dsa-${bits}.key" -outform pem -out "$OUTDIR/pem/dsa-${bits}-dsa.key"
   openssl dsa -in "$OUTDIR/pem/dsa-${bits}.key" -outform der -out "$OUTDIR/der/dsa-${bits}-dsa.key"
 

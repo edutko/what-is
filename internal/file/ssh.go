@@ -1,6 +1,8 @@
 package file
 
 import (
+	"encoding/binary"
+	"fmt"
 	"strings"
 
 	"golang.org/x/crypto/ssh"
@@ -23,4 +25,13 @@ func sshKnownHostsKeyAttributes(hosts []string, pub ssh.PublicKey, comment strin
 	attrs := []Attribute{{"Hosts", strings.Join(hosts, ", ")}}
 	attrs = append(attrs, sshPublicKeyAttributes(pub, comment)...)
 	return attrs
+}
+
+func parseKdfOptions(opts []byte) ([]byte, uint32, error) {
+	saltLen := binary.BigEndian.Uint32(opts[:4])
+	if 4+saltLen+4 != uint32(len(opts)) {
+		return nil, 0, fmt.Errorf("invalid KDF options")
+	}
+	rounds := binary.BigEndian.Uint32(opts[4+saltLen:])
+	return opts[4 : 4+saltLen], rounds, nil
 }

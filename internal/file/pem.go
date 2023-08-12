@@ -46,7 +46,7 @@ func parsePEMBlock(b *pem.Block) Info {
 			return info
 		}
 	case "RSA PRIVATE KEY":
-		if info, err := parseRSAPrivateKey(b.Bytes); err != nil {
+		if info, err := parsePKCS1PrivateKey(b.Bytes); err != nil {
 			return UnknownPEMData
 		} else {
 			return info

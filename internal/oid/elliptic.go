@@ -2,6 +2,8 @@ package oid
 
 import "encoding/asn1"
 
+var ECPublicKey = asn1.ObjectIdentifier{1, 2, 840, 10045, 2, 1}
+
 // https://www.rfc-editor.org/rfc/rfc5480
 var Secp192r1 = asn1.ObjectIdentifier{1, 2, 840, 10045, 3, 1, 1}
 var Sect163k1 = asn1.ObjectIdentifier{1, 3, 132, 0, 1}
