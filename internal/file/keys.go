@@ -12,6 +12,7 @@ import (
 	"math/big"
 
 	"github.com/edutko/what-is/internal/asn1struct"
+	"github.com/edutko/what-is/internal/crypto/elliptic"
 	"github.com/edutko/what-is/internal/names"
 	"github.com/edutko/what-is/internal/oid"
 )
@@ -118,6 +119,11 @@ func ecExplicitParameterAttributes(ecParams asn1struct.ECParameters) []Attribute
 			attrs = append(attrs, Attribute{"Field size", fmt.Sprintf("2^%d", field.FieldSize)})
 		}
 	}
+	
+	if name := elliptic.CurveNameFromParameters(ecParams); name != "" {
+		attrs = append(attrs, Attribute{Name: "Curve (inferred)", Value: name})
+	}
+
 	return attrs
 }
 

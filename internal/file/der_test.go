@@ -80,6 +80,7 @@ func Test_parseDERData(t *testing.T) {
 				{Name: "Algorithm", Value: "ECDSA"},
 				{Name: "Field type", Value: "prime field"},
 				{Name: "Prime size", Value: "256 bits"},
+				{Name: "Curve (inferred)", Value: "P-256 (secp256r1, prime256v1)"},
 			}},
 		},
 		{"x509/der/prime256v1.pub", Info{
@@ -95,6 +96,34 @@ func Test_parseDERData(t *testing.T) {
 				{Name: "Algorithm", Value: "ECDSA"},
 				{Name: "Field type", Value: "prime field"},
 				{Name: "Prime size", Value: "256 bits"},
+				{Name: "Curve (inferred)", Value: "P-256 (secp256r1, prime256v1)"},
+			}},
+		},
+		{"x509/der/secp224r1-explicit.pub", Info{
+			Description: "PKIX public key",
+			Attributes: []Attribute{
+				{Name: "Algorithm", Value: "ECDSA"},
+				{Name: "Field type", Value: "prime field"},
+				{Name: "Prime size", Value: "224 bits"},
+				{Name: "Curve (inferred)", Value: "P-224 (secp224r1)"},
+			}},
+		},
+		{"x509/der/secp384r1-explicit.pub", Info{
+			Description: "PKIX public key",
+			Attributes: []Attribute{
+				{Name: "Algorithm", Value: "ECDSA"},
+				{Name: "Field type", Value: "prime field"},
+				{Name: "Prime size", Value: "384 bits"},
+				{Name: "Curve (inferred)", Value: "P-384 (secp384r1)"},
+			}},
+		},
+		{"x509/der/secp521r1-explicit.pub", Info{
+			Description: "PKIX public key",
+			Attributes: []Attribute{
+				{Name: "Algorithm", Value: "ECDSA"},
+				{Name: "Field type", Value: "prime field"},
+				{Name: "Prime size", Value: "521 bits"},
+				{Name: "Curve (inferred)", Value: "P-521 (secp521r1)"},
 			}},
 		},
 		{"x509/der/ed25519.key", Info{
