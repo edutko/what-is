@@ -28,7 +28,8 @@ func CurveNameFromParameters(p asn1struct.ECParameters) string {
 }
 
 func primeFieldParamsMatch(a primeCurveParameters, b asn1struct.ECParameters) bool {
-	if bytes.Equal(a.A, b.Curve.A) && bytes.Equal(a.B, b.Curve.B) && bytes.Equal(a.Seed, b.Curve.Seed.Bytes) &&
+	if bytes.Equal(a.A, b.Curve.A) && bytes.Equal(a.B, b.Curve.B) &&
+		(bytes.Equal(a.Seed, b.Curve.Seed.Bytes) || b.Curve.Seed.BitLength == 0) &&
 		a.Order.Cmp(b.Order) == 0 {
 		switch b.Base[0] {
 		case 0x00:
