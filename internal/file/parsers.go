@@ -15,6 +15,13 @@ import (
 type Parser func(info Info, data []byte) (Info, error)
 
 func ASN1File(info Info, data []byte) (Info, error) {
+	derInfo := parseDERData(data)
+	if derInfo.Description != UnknownASN1Data.Description {
+		info.Description = derInfo.Description
+		info.Attributes = derInfo.Attributes
+		info.Children = derInfo.Children
+		return info, nil
+	}
 	asn1nfo := parseASN1Data(data)
 	info.Description = asn1nfo.Description
 	info.Attributes = asn1nfo.Attributes
