@@ -5,11 +5,12 @@ import (
 	"encoding/pem"
 	"fmt"
 
+	"github.com/edutko/putty-go/ppk"
+	"github.com/edutko/putty-go/putty"
 	"golang.org/x/crypto/ssh"
 
 	"github.com/edutko/what-is/internal/openpgp"
 	"github.com/edutko/what-is/internal/openpgp/packet"
-	"github.com/edutko/what-is/internal/putty"
 )
 
 type Parser func(info Info, data []byte) (Info, error)
@@ -120,17 +121,17 @@ func pgpKey(info Info, data []byte) (Info, error) {
 func PuttyPPK(info Info, data []byte) (Info, error) {
 	info.Description = "puTTY private key"
 
-	ppk, err := putty.ParsePPKBytes(data)
+	ppk, err := ppk.InsecureParse(data)
 	if err != nil {
 		return info, fmt.Errorf("putty.ParsePPKBytes: %w", err)
 	}
-	pub, comment, _, _, err := ssh.ParseAuthorizedKey(ppk.AsAuthorizedKey())
+	pub, err := putty.UnmarshalPublicKey(ppk.PublicBytes, ppk.Comment)
 	if err != nil {
 		return info, fmt.Errorf("ssh.ParsePublicKey: %w", err)
 	}
 
-	info.Attributes = sshPublicKeyAttributes(pub, comment)
-	info.Attributes = append(info.Attributes, Attribute{"Encryption", ppk.Encryption})
+	info.Attributes = puttyPublicKeyAttributes(pub)
+	info.Attributes = append(info.Attributes, Attribute{"Encryption", string(ppk.Encryption)})
 
 	return info, nil
 }

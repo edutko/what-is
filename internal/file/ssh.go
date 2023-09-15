@@ -5,8 +5,24 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/edutko/putty-go/putty"
 	"golang.org/x/crypto/ssh"
 )
+
+func puttyPublicKeyAttributes(pub putty.PublicKey) []Attribute {
+	attrs := []Attribute{
+		{"Type", pub.Type()},
+	}
+	if pub.Comment() != "" {
+		attrs = append(attrs, Attribute{"Comment", pub.Comment()})
+	}
+	if pub.Type() == "ssh-ed448" {
+		attrs = append(attrs, ed448PrivateKeyAttributes()...)
+	} else {
+		attrs = append(attrs, cryptoPublicKeyAttributes(pub.Key())...)
+	}
+	return attrs
+}
 
 func sshPublicKeyAttributes(pub ssh.PublicKey, comment string) []Attribute {
 	attrs := []Attribute{
