@@ -119,19 +119,23 @@ func pgpKey(info Info, data []byte) (Info, error) {
 }
 
 func PuttyPPK(info Info, data []byte) (Info, error) {
-	info.Description = "puTTY private key"
-
-	ppk, err := ppk.InsecureParse(data)
+	k, err := ppk.InsecureParse(data)
 	if err != nil {
 		return info, fmt.Errorf("putty.ParsePPKBytes: %w", err)
 	}
-	pub, err := putty.UnmarshalPublicKey(ppk.PublicBytes, ppk.Comment)
+	info.Description = fmt.Sprintf("puTTY private key (version %d)", k.Version)
+
+	pub, err := putty.UnmarshalPublicKey(k.PublicBytes, k.Comment)
 	if err != nil {
 		return info, fmt.Errorf("ssh.ParsePublicKey: %w", err)
 	}
-
 	info.Attributes = puttyPublicKeyAttributes(pub)
-	info.Attributes = append(info.Attributes, Attribute{"Encryption", string(ppk.Encryption)})
+	info.Attributes = append(info.Attributes, Attribute{"Encryption", string(k.Encryption)})
+	if k.Encryption != ppk.NoEncryption {
+		info.Attributes = append(info.Attributes,
+			Attribute{"KDF", fmt.Sprintf("%s (%d passes, %d MB, parallelism: %d)",
+				k.KeyDerivation, k.Argon2Passes, k.Argon2Memory, k.Argon2Parallelism)})
+	}
 
 	return info, nil
 }
