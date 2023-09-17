@@ -4,18 +4,21 @@ import (
 	"bytes"
 	"path/filepath"
 	"strings"
+
+	"github.com/edutko/what-is/internal/ssh1"
 )
 
 var filetypes = []filetype{
-	{[]string{"authorized_keys"}, nil, nil, SSHAuthorizedKeys},
-	{[]string{"known_hosts"}, nil, nil, SSHKnownHosts},
 	{nil, []string{"PuTTY-User-Key-File-2:", "PuTTY-User-Key-File-3:"}, nil, PuttyPPK},
 	{nil, []string{"\xCE\xCE\xCE\xCE"}, nil, JCEKeystore},
 	{nil, []string{"\xFE\xED\xFE\xED"}, nil, JavaKeystore},
-	{nil, []string{"ssh-dss", "ssh-rsa", "ecdsa-sha2-", "ssh-ed25519", "ssh-ed448"}, nil, SSHPublicKey},
+	{nil, []string{ssh1.Header}, nil, SSH1PrivateKey},
 	{nil, []string{"-----BEGIN PGP PUBLIC KEY BLOCK-----"}, nil, PGPPublicKey},
 	{nil, []string{"-----BEGIN PGP PRIVATE KEY BLOCK-----"}, nil, PGPPrivateKey},
 	{nil, []string{"-----BEGIN "}, nil, PEMFile},
+	{[]string{"authorized_keys"}, nil, nil, SSHAuthorizedKeys},
+	{[]string{"known_hosts"}, nil, nil, SSHKnownHosts},
+	{nil, []string{"ssh-dss", "ssh-rsa", "ecdsa-sha2-", "ssh-ed25519", "ssh-ed448"}, nil, SSHPublicKey},
 	{nil, nil, IsASN1, ASN1File},
 }
 

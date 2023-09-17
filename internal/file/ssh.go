@@ -1,6 +1,7 @@
 package file
 
 import (
+	"crypto"
 	"encoding/binary"
 	"fmt"
 	"strings"
@@ -21,6 +22,15 @@ func puttyPublicKeyAttributes(pub putty.PublicKey) []Attribute {
 	} else {
 		attrs = append(attrs, cryptoPublicKeyAttributes(pub.Key())...)
 	}
+	return attrs
+}
+
+func ssh1PublicKeyAttributes(pub crypto.PublicKey, comment string) []Attribute {
+	attrs := []Attribute{}
+	if comment != "" {
+		attrs = append(attrs, Attribute{"Comment", comment})
+	}
+	attrs = append(attrs, cryptoPublicKeyAttributes(pub)...)
 	return attrs
 }
 

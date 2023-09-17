@@ -11,6 +11,7 @@ import (
 
 	"github.com/edutko/what-is/internal/openpgp"
 	"github.com/edutko/what-is/internal/openpgp/packet"
+	"github.com/edutko/what-is/internal/ssh1"
 )
 
 type Parser func(info Info, data []byte) (Info, error)
@@ -136,6 +137,19 @@ func PuttyPPK(info Info, data []byte) (Info, error) {
 			Attribute{"KDF", fmt.Sprintf("%s (%d passes, %d MB, parallelism: %d)",
 				k.KeyDerivation, k.Argon2Passes, k.Argon2Memory, k.Argon2Parallelism)})
 	}
+
+	return info, nil
+}
+
+func SSH1PrivateKey(info Info, data []byte) (Info, error) {
+	info.Description = "SSH v1 key"
+
+	priv, comment, err := ssh1.ParsePrivateKey(data, []byte(""))
+	if err != nil {
+		return info, fmt.Errorf("ssh1.ParsePrivateKey: %w", err)
+	}
+
+	info.Attributes = ssh1PublicKeyAttributes(priv.Public(), comment)
 
 	return info, nil
 }
