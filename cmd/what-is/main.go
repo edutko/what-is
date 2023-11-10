@@ -79,13 +79,16 @@ func inspectDirectory(f string, remainingDepth int) {
 
 func inspectFile(filePath string) {
 	f, err := os.Open(filePath)
+	if err != nil {
+		log.Printf("error processing file %#v: %v", filePath, err)
+	}
 	defer func() {
 		_ = f.Close()
 	}()
 
 	info, err := file.Inspect(f)
 	if err != nil {
-		log.Printf("error processing file \"%s\": %v", filePath, err)
+		log.Printf("error processing file %#v: %v", filePath, err)
 	}
 
 	fmt.Printf("%s: ", info.Path)
