@@ -5,6 +5,7 @@ import (
 	"encoding/asn1"
 	"errors"
 	"fmt"
+	"strings"
 
 	"golang.org/x/crypto/ssh"
 
@@ -18,17 +19,17 @@ var UnknownASN1Data = Info{Description: "unknown ASN.1 data"}
 func parseDERData(b []byte) Info {
 	if info, err := parseCertificate(b); err == nil {
 		return info
-	} else if info, err := parsePKCS8PrivateKey(b); err == nil {
+	} else if info, err = parsePKCS8PrivateKey(b); err == nil {
 		return info
-	} else if info, err := parsePKIXPublicKey(b); err == nil {
+	} else if info, err = parsePKIXPublicKey(b); err == nil {
 		return info
-	} else if info, err := parsePKCS1PublicKey(b); err == nil {
+	} else if info, err = parsePKCS1PublicKey(b); err == nil {
 		return info
-	} else if info, err := parseECPrivateKey(b); err == nil {
+	} else if info, err = parseECPrivateKey(b); err == nil {
 		return info
-	} else if info, err := parsePKCS1PrivateKey(b); err == nil {
+	} else if info, err = parsePKCS1PrivateKey(b); err == nil {
 		return info
-	} else if info, err := parseDSAPrivateKey(b); err == nil {
+	} else if info, err = parseDSAPrivateKey(b); err == nil {
 		return info
 	} else {
 		return UnknownASN1Data
@@ -47,13 +48,22 @@ func parseCertificate(der []byte) (Info, error) {
 		return UnknownASN1Data, err
 	}
 
+	desc := fmt.Sprintf("x.509v%d", c.Version)
+	if c.BasicConstraintsValid && c.IsCA {
+		desc = desc + " CA"
+	}
+	desc = desc + " certificate"
+
 	info := Info{
-		Description: "x.509 certificate",
+		Description: desc,
 		Attributes: []Attribute{
 			{"Serial", c.SerialNumber.String()},
 			{"Subject", c.Subject.String()},
 			{"Issuer", c.Issuer.String()},
-			{"Expiration", c.NotAfter.Format("2006-01-02")},
+			{"Not before", c.NotBefore.Format("2006-01-02")},
+			{"Not after", c.NotAfter.Format("2006-01-02")},
+			{"Key usage", strings.Join(x509KeyUsages(c.KeyUsage), ", ")},
+			{"Extended key usage", strings.Join(x509EKUs(c.ExtKeyUsage), ", ")},
 			{"Signature algorithm", c.SignatureAlgorithm.String()},
 		},
 		Children: []Info{
@@ -64,7 +74,55 @@ func parseCertificate(der []byte) (Info, error) {
 		},
 	}
 
+	if c.BasicConstraintsValid && c.IsCA && (c.MaxPathLen != 0 || c.MaxPathLenZero) {
+		info.Attributes = append(info.Attributes, Attribute{"Max path length", fmt.Sprintf("%d", c.MaxPathLen)})
+	}
+
 	return info, nil
+}
+
+func x509KeyUsages(ku x509.KeyUsage) []string {
+	var ss []string
+	for u, s := range map[x509.KeyUsage]string{
+		x509.KeyUsageDigitalSignature:  "digitalSignature",
+		x509.KeyUsageContentCommitment: "contentCommitment",
+		x509.KeyUsageKeyEncipherment:   "keyEncipherment",
+		x509.KeyUsageDataEncipherment:  "dataEncipherment",
+		x509.KeyUsageKeyAgreement:      "keyAgreement",
+		x509.KeyUsageCertSign:          "certSign",
+		x509.KeyUsageCRLSign:           "cRLSign",
+		x509.KeyUsageEncipherOnly:      "encipherOnly",
+		x509.KeyUsageDecipherOnly:      "decipherOnly",
+	} {
+		if ku&u == u {
+			ss = append(ss, s)
+		}
+	}
+	return ss
+}
+
+func x509EKUs(ekus []x509.ExtKeyUsage) []string {
+	m := map[x509.ExtKeyUsage]string{
+		x509.ExtKeyUsageAny:                            "any",
+		x509.ExtKeyUsageServerAuth:                     "serverAuth",
+		x509.ExtKeyUsageClientAuth:                     "clientAuth",
+		x509.ExtKeyUsageCodeSigning:                    "codeSigning",
+		x509.ExtKeyUsageEmailProtection:                "emailProtection",
+		x509.ExtKeyUsageIPSECEndSystem:                 "ipsecEndSystem",
+		x509.ExtKeyUsageIPSECTunnel:                    "ipsecTunnel",
+		x509.ExtKeyUsageIPSECUser:                      "ipsecUser",
+		x509.ExtKeyUsageTimeStamping:                   "timeStamping",
+		x509.ExtKeyUsageOCSPSigning:                    "OCSPSigning",
+		x509.ExtKeyUsageMicrosoftServerGatedCrypto:     "microsoftServerGatedCrypto",
+		x509.ExtKeyUsageNetscapeServerGatedCrypto:      "netscapeServerGatedCrypto",
+		x509.ExtKeyUsageMicrosoftCommercialCodeSigning: "microsoftCommercialCodeSigning",
+		x509.ExtKeyUsageMicrosoftKernelCodeSigning:     "microsoftKernelCodeSigning",
+	}
+	var ss []string
+	for _, u := range ekus {
+		ss = append(ss, m[u])
+	}
+	return ss
 }
 
 func parsePKCS1PublicKey(der []byte) (Info, error) {
