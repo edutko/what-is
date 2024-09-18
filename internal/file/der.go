@@ -3,6 +3,7 @@ package file
 import (
 	"crypto/x509"
 	"encoding/asn1"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"strings"
@@ -49,8 +50,12 @@ func parseCertificate(der []byte) (Info, error) {
 	}
 
 	desc := fmt.Sprintf("x.509v%d", c.Version)
-	if c.BasicConstraintsValid && c.IsCA {
-		desc = desc + " CA"
+	if c.BasicConstraintsValid {
+		if c.IsCA {
+			desc = desc + " CA"
+		} else {
+			desc = desc + " end-entity"
+		}
 	}
 	desc = desc + " certificate"
 
@@ -58,13 +63,6 @@ func parseCertificate(der []byte) (Info, error) {
 		Description: desc,
 		Attributes: []Attribute{
 			{"Serial", c.SerialNumber.String()},
-			{"Subject", c.Subject.String()},
-			{"Issuer", c.Issuer.String()},
-			{"Not before", c.NotBefore.Format("2006-01-02")},
-			{"Not after", c.NotAfter.Format("2006-01-02")},
-			{"Key usage", strings.Join(x509KeyUsages(c.KeyUsage), ", ")},
-			{"Extended key usage", strings.Join(x509EKUs(c.ExtKeyUsage), ", ")},
-			{"Signature algorithm", c.SignatureAlgorithm.String()},
 		},
 		Children: []Info{
 			{
@@ -74,9 +72,49 @@ func parseCertificate(der []byte) (Info, error) {
 		},
 	}
 
+	info.Attributes = append(info.Attributes, Attribute{"Subject", c.Subject.String()})
+	if len(c.SubjectKeyId) > 0 {
+		info.Attributes = append(info.Attributes, Attribute{"Subject key id", hex.EncodeToString(c.SubjectKeyId)})
+	}
+
+	info.Attributes = append(info.Attributes, Attribute{"Issuer", c.Issuer.String()})
+	if len(c.AuthorityKeyId) > 0 {
+		info.Attributes = append(info.Attributes, Attribute{"Authority key id", hex.EncodeToString(c.AuthorityKeyId)})
+	}
+
+	info.Attributes = append(info.Attributes,
+		Attribute{"Not before", c.NotBefore.Format("2006-01-02")},
+		Attribute{"Not after", c.NotAfter.Format("2006-01-02")},
+		Attribute{"Key usage", strings.Join(x509KeyUsages(c.KeyUsage), ", ")},
+		Attribute{"Extended key usage", strings.Join(x509EKUs(c.ExtKeyUsage), ", ")},
+	)
+
 	if c.BasicConstraintsValid && c.IsCA && (c.MaxPathLen != 0 || c.MaxPathLenZero) {
 		info.Attributes = append(info.Attributes, Attribute{"Max path length", fmt.Sprintf("%d", c.MaxPathLen)})
 	}
+
+	var sans []string
+	for _, san := range c.DNSNames {
+		sans = append(sans, san)
+	}
+
+	for _, san := range c.IPAddresses {
+		sans = append(sans, san.String())
+	}
+
+	for _, san := range c.URIs {
+		sans = append(sans, san.String())
+	}
+
+	for _, san := range c.EmailAddresses {
+		sans = append(sans, san)
+	}
+
+	if len(sans) > 0 {
+		info.Attributes = append(info.Attributes, Attribute{"SANs", strings.Join(sans, ", ")})
+	}
+
+	info.Attributes = append(info.Attributes, Attribute{"Signature algorithm", c.SignatureAlgorithm.String()})
 
 	return info, nil
 }
