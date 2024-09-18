@@ -5,6 +5,7 @@ import (
 	"encoding/pem"
 	"fmt"
 
+	"github.com/edutko/jks-go/keystore"
 	"github.com/edutko/putty-go/ppk"
 	"github.com/edutko/putty-go/putty"
 	"golang.org/x/crypto/ssh"
@@ -31,18 +32,28 @@ func ASN1File(info Info, data []byte) (Info, error) {
 	return info, nil
 }
 
-func JavaKeystore(info Info, _ []byte) (Info, error) {
-	return Info{
-		Path:        info.Path,
-		Description: "Java Keystore",
-	}, nil
+func JavaKeystore(info Info, data []byte) (Info, error) {
+	info.Description = "Java Keystore (JKS)"
+	k, err := keystore.InsecureParse(data)
+	if err != nil {
+		return info, fmt.Errorf("failed to parse keystore data")
+	}
+	for _, e := range k.Entries {
+		info.Children = append(info.Children, parseJKSEntry(e))
+	}
+	return info, nil
 }
 
-func JCEKeystore(info Info, _ []byte) (Info, error) {
-	return Info{
-		Path:        info.Path,
-		Description: "Java JCE Keystore",
-	}, nil
+func JCEKeystore(info Info, data []byte) (Info, error) {
+	info.Description = "Java Keystore (JCEKS)"
+	k, err := keystore.InsecureParse(data)
+	if err != nil {
+		return info, fmt.Errorf("failed to parse keystore data")
+	}
+	for _, e := range k.Entries {
+		info.Children = append(info.Children, parseJKSEntry(e))
+	}
+	return info, nil
 }
 
 func PEMFile(info Info, data []byte) (Info, error) {
