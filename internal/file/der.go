@@ -86,7 +86,7 @@ func parseCertificate(der []byte) (Info, error) {
 		Attribute{"Not before", c.NotBefore.Format("2006-01-02")},
 		Attribute{"Not after", c.NotAfter.Format("2006-01-02")},
 		Attribute{"Key usage", strings.Join(x509KeyUsages(c.KeyUsage), ", ")},
-		Attribute{"Extended key usage", strings.Join(x509EKUs(c.ExtKeyUsage), ", ")},
+		Attribute{"Extended key usage", strings.Join(x509EKUs(c.ExtKeyUsage, c.UnknownExtKeyUsage), ", ")},
 	)
 
 	if c.BasicConstraintsValid && c.IsCA && (c.MaxPathLen != 0 || c.MaxPathLenZero) {
@@ -139,7 +139,7 @@ func x509KeyUsages(ku x509.KeyUsage) []string {
 	return ss
 }
 
-func x509EKUs(ekus []x509.ExtKeyUsage) []string {
+func x509EKUs(ekus []x509.ExtKeyUsage, unknownEKUs []asn1.ObjectIdentifier) []string {
 	m := map[x509.ExtKeyUsage]string{
 		x509.ExtKeyUsageAny:                            "any",
 		x509.ExtKeyUsageServerAuth:                     "serverAuth",
@@ -159,6 +159,9 @@ func x509EKUs(ekus []x509.ExtKeyUsage) []string {
 	var ss []string
 	for _, u := range ekus {
 		ss = append(ss, m[u])
+	}
+	for _, o := range unknownEKUs {
+		ss = append(ss, o.String())
 	}
 	return ss
 }
