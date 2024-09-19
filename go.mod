@@ -1,6 +1,8 @@
 module github.com/edutko/what-is
 
-go 1.20
+go 1.21
+
+toolchain go1.23.1
 
 require (
 	github.com/edutko/putty-go v0.1.0
