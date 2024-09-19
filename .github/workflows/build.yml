@@ -22,12 +22,12 @@ jobs:
 
     steps:
       - name: Install Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: 1.x
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -36,7 +36,6 @@ jobs:
           CGO_ENABLED: 0
           GOOS: ${{ matrix.GOOS }}
           GOARCH: ${{ matrix.GOARCH }}
-          GOARM: ${{ matrix.GOARM }}
         run: |
           DIR="$(mktemp -d)"
           mkdir "$DIR/what-is"
@@ -53,12 +52,12 @@ jobs:
           fi
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
-          name: binaries
-          path: what-is-*
+          name: what-is-${{ matrix.GOOS }}-${{ matrix.GOARCH }}
+          path: what-is-*-${{ matrix.GOOS }}-${{ matrix.GOARCH }}.*
 
-  upload:
+  publish:
     name: Upload release binaries
     if: github.event_name == 'release'
     needs: build
@@ -68,9 +67,10 @@ jobs:
 
     steps:
       - name: Download workflow artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
-          name: binaries
+          pattern: what-is-*
+          merge-multiple: true
 
       - name: Upload release artifacts
         run: gh release upload "$GITHUB_REF_NAME" what-is-*
