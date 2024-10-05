@@ -77,6 +77,28 @@ func TestFiletype_MatchesMagic(t *testing.T) {
 	}
 }
 
+func TestFiletype_SmellsLike(t *testing.T) {
+	testCases := []struct {
+		name     string
+		data     []byte
+		identify Identifier
+		matches  bool
+	}{
+		{"empty", []byte{}, IsASN1, false},
+		{"junk", []byte{0x01, 0x02}, IsASN1, false},
+		{"prime256v1.pub", fileContents("x509/der/prime256v1.pub"), IsASN1, true},
+		{"prime256v1-b64", fileContents("asn1/prime256v1-b64std"), IsBase64ASN1, true},
+		{"prime256v1-b64url", fileContents("asn1/prime256v1-b64url"), IsBase64ASN1, true},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ft := filetype{identify: tc.identify}
+			assert.Equal(t, tc.matches, ft.SmellsLike(tc.name, tc.data, int64(len(tc.data))))
+		})
+	}
+}
+
 func fileContents(name string) []byte {
 	b, err := os.ReadFile(filepath.Join("testdata", name))
 	if err != nil {

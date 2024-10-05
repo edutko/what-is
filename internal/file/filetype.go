@@ -20,6 +20,7 @@ var filetypes = []filetype{
 	{[]string{"known_hosts"}, nil, nil, SSHKnownHosts},
 	{nil, []string{"ssh-dss", "ssh-rsa", "ecdsa-sha2-", "ssh-ed25519", "ssh-ed448"}, nil, SSHPublicKey},
 	{nil, nil, IsASN1, ASN1File},
+	{nil, nil, IsBase64ASN1, Base64ASN1File},
 }
 
 type filetype struct {

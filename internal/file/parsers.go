@@ -12,6 +12,7 @@ import (
 	"github.com/edutko/what-is/internal/openpgp"
 	"github.com/edutko/what-is/internal/openpgp/packet"
 	"github.com/edutko/what-is/internal/ssh1"
+	"github.com/edutko/what-is/internal/util"
 )
 
 type Parser func(info Info, data []byte) (Info, error)
@@ -29,6 +30,14 @@ func ASN1File(info Info, data []byte) (Info, error) {
 	info.Attributes = asn1nfo.Attributes
 	info.Children = asn1nfo.Children
 	return info, nil
+}
+
+func Base64ASN1File(info Info, data []byte) (Info, error) {
+	decoded, err := util.DecodeAnyBase64(data)
+	if err != nil {
+		return info, err
+	}
+	return ASN1File(info, decoded)
 }
 
 func JavaKeystore(info Info, _ []byte) (Info, error) {
