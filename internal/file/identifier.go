@@ -28,3 +28,10 @@ func isBinaryASN1(data []byte) bool {
 	}
 	return true
 }
+
+func IsJWT(_ string, data []byte, _ int64) bool {
+	if _, err := ParseJWT(data); err != nil {
+		return false
+	}
+	return true
+}

@@ -2,6 +2,7 @@ package file
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/pem"
 	"fmt"
 
@@ -52,6 +53,21 @@ func JCEKeystore(info Info, _ []byte) (Info, error) {
 		Path:        info.Path,
 		Description: "Java JCE Keystore",
 	}, nil
+}
+
+func JWTData(info Info, data []byte) (Info, error) {
+	info.Description = "JSON Web Token (JWT)"
+
+	j, err := ParseJWT(data)
+	if err != nil {
+		return info, err
+	}
+
+	info.Attributes = append(info.Attributes, j.HeaderAttributes()...)
+	info.Attributes = append(info.Attributes, j.PayloadAttributes()...)
+	info.Attributes = append(info.Attributes, Attribute{"Signature", base64.RawURLEncoding.EncodeToString(j.Signature)})
+
+	return info, nil
 }
 
 func PEMFile(info Info, data []byte) (Info, error) {
