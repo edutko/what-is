@@ -5,9 +5,11 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"fmt"
+	"strings"
 
 	"github.com/edutko/putty-go/ppk"
 	"github.com/edutko/putty-go/putty"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/ssh"
 
 	"github.com/edutko/what-is/internal/openpgp"
@@ -225,5 +227,22 @@ func SSHPublicKey(info Info, data []byte) (Info, error) {
 		return info, fmt.Errorf("ssh.ParsePublicKey: %w", err)
 	}
 	info.Attributes = sshPublicKeyAttributes(pub, comment)
+	return info, nil
+}
+
+func UUIDValue(info Info, data []byte) (Info, error) {
+	info.Description = "UUID"
+
+	s := strings.TrimSpace(string(data))
+	u, err := uuid.Parse(s)
+	if err != nil {
+		return info, fmt.Errorf("uuid.Parse: %w", err)
+	}
+
+	v := u.Version()
+	if v <= 15 {
+		info.Description = fmt.Sprintf("UUID v%d", v)
+	}
+
 	return info, nil
 }

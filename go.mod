@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/edutko/putty-go v0.1.0
+	github.com/google/uuid v1.6.0
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/crypto v0.12.0
 )

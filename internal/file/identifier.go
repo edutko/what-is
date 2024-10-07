@@ -2,6 +2,9 @@ package file
 
 import (
 	"encoding/asn1"
+	"strings"
+
+	"github.com/google/uuid"
 
 	"github.com/edutko/what-is/internal/util"
 )
@@ -31,6 +34,14 @@ func isBinaryASN1(data []byte) bool {
 
 func IsJWT(_ string, data []byte, _ int64) bool {
 	if _, err := ParseJWT(data); err != nil {
+		return false
+	}
+	return true
+}
+
+func IsUUID(_ string, data []byte, _ int64) bool {
+	s := strings.TrimSpace(string(data))
+	if _, err := uuid.Parse(s); err != nil {
 		return false
 	}
 	return true
