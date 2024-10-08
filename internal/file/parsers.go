@@ -3,9 +3,11 @@ package file
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/pem"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/edutko/putty-go/ppk"
 	"github.com/edutko/putty-go/putty"
@@ -231,17 +233,66 @@ func SSHPublicKey(info Info, data []byte) (Info, error) {
 }
 
 func UUIDValue(info Info, data []byte) (Info, error) {
-	info.Description = "UUID"
-
 	s := strings.TrimSpace(string(data))
 	u, err := uuid.Parse(s)
 	if err != nil {
 		return info, fmt.Errorf("uuid.Parse: %w", err)
 	}
+	info.Description = "UUID (unknown type)"
 
+	// https://datatracker.ietf.org/doc/html/rfc9562
 	v := u.Version()
 	if v <= 15 {
-		info.Description = fmt.Sprintf("UUID v%d", v)
+		switch v {
+		case 0:
+			if u.String() == uuid.Nil.String() {
+				info.Description = "UUID (Nil UUID)"
+			}
+		case 1:
+			info.Description = "UUID v1 (Gregorian time)"
+			t := time.Unix(u.Time().UnixTime()).UTC()
+			info.Attributes = append(info.Attributes, []Attribute{
+				{"Node id", hex.EncodeToString(u.NodeID())},
+				{"Time (raw)", fmt.Sprintf("%d", u.Time())},
+				{"Time (UTC)", t.Format("2006-01-02 15:04:05.9999999")},
+				{"Clock sequence", fmt.Sprintf("%d", u.ClockSequence())},
+			}...)
+		case 2:
+			info.Description = "UUID v2 (DCE)"
+			t := time.Unix(u.Time().UnixTime()).UTC()
+			info.Attributes = append(info.Attributes, []Attribute{
+				{"Domain", u.Domain().String()},
+				{"Id", fmt.Sprintf("%d", u.ID())},
+				{"Node id", hex.EncodeToString(u.NodeID())},
+				{"Time (raw)", fmt.Sprintf("%d", u.Time())},
+				{"Time (UTC)", t.Format("2006-01-02 15:04:05.9999999")},
+				{"Clock sequence", fmt.Sprintf("%d", u.ClockSequence())},
+			}...)
+		case 3:
+			info.Description = "UUID v3 (MD5)"
+		case 4:
+			info.Description = "UUID v4 (random)"
+		case 5:
+			info.Description = "UUID v5 (SHA1)"
+		case 6:
+			info.Description = "UUID v6 (reordered Gregorian time)"
+			t := time.Unix(u.Time().UnixTime()).UTC()
+			info.Attributes = append(info.Attributes, []Attribute{
+				{"Time (raw)", fmt.Sprintf("%d", u.Time())},
+				{"Time (UTC)", t.Format("2006-01-02 15:04:05.9999999")},
+			}...)
+		case 7:
+			info.Description = "UUID v7 (Unix epoch time)"
+			t := time.Unix(u.Time().UnixTime()).UTC()
+			info.Attributes = append(info.Attributes, []Attribute{
+				{"Time (raw)", fmt.Sprintf("%d", u.Time())},
+				{"Time (UTC)", t.Format("2006-01-02 15:04:05.9999999")},
+			}...)
+		case 0xff:
+			if u.String() == uuid.Max.String() {
+				info.Description = "UUID (Max UUID)"
+			}
+		}
 	}
 
 	return info, nil
