@@ -12,8 +12,10 @@ import (
 	"github.com/edutko/putty-go/ppk"
 	"github.com/edutko/putty-go/putty"
 	"github.com/google/uuid"
+	"github.com/jfrog/go-rpm"
 	"golang.org/x/crypto/ssh"
 
+	"github.com/edutko/decipher/internal/names"
 	"github.com/edutko/decipher/internal/openpgp"
 	"github.com/edutko/decipher/internal/openpgp/packet"
 	"github.com/edutko/decipher/internal/ssh1"
@@ -167,6 +169,65 @@ func PuttyPPK(info Info, data []byte) (Info, error) {
 				k.KeyDerivation, k.Argon2Passes, k.Argon2Memory, k.Argon2Parallelism)})
 	}
 
+	return info, nil
+}
+
+func RPMFile(info Info, data []byte) (Info, error) {
+	info.Description = "RPM"
+
+	r, err := rpm.ReadPackageFile(bytes.NewReader(data))
+	if err != nil {
+		return info, fmt.Errorf("rpm.ReadPackageLead: %w", err)
+	}
+
+	if r.RPMVersion() != "" {
+		info.Description = fmt.Sprintf("RPM (version %s)", r.RPMVersion())
+	}
+
+	info.Attributes = append(info.Attributes, Attribute{"Name", r.Name()})
+	info.Attributes = append(info.Attributes, Attribute{"Version", r.Version()})
+	info.Attributes = append(info.Attributes, Attribute{"Release", r.Release()})
+	info.Attributes = append(info.Attributes, Attribute{"Architecture", r.Architecture()})
+
+	if len(r.Headers) > 0 {
+		sigIdx := r.Headers[0].Indexes
+		if len(sigIdx) > 0 && sigIdx[0].Tag == rpm.RPMTAG_HEADERSIGNATURES {
+			if md5Digest := sigIdx.BytesByTag(rpm.RPMSIGTAG_MD5); len(md5Digest) > 0 {
+				info.Attributes = append(info.Attributes, Attribute{names.MD5, hex.EncodeToString(md5Digest)})
+			}
+			if sha1Digest := sigIdx.StringByTag(rpm.RPMSIGTAG_SHA1); len(sha1Digest) > 0 {
+				info.Attributes = append(info.Attributes, Attribute{names.SHA1, sha1Digest})
+			}
+			if sha256Digest := sigIdx.StringByTag(273); len(sha256Digest) > 0 {
+				info.Attributes = append(info.Attributes, Attribute{names.SHA256, sha256Digest})
+			}
+
+			foundSig := false
+			for _, t := range []int{rpm.RPMSIGTAG_DSA, rpm.RPMSIGTAG_RSA} {
+				if sig := sigIdx.BytesByTag(t); len(sig) > 0 {
+					foundSig = true
+					info.Children = append(info.Children, Info{
+						Description: "Signature",
+						Attributes:  rpmSignatureAttributes(sig),
+					})
+				}
+			}
+
+			for _, t := range []int{rpm.RPMSIGTAG_GPG, rpm.RPMSIGTAG_PGP} {
+				if sig := sigIdx.BytesByTag(t); len(sig) > 0 {
+					foundSig = true
+					info.Children = append(info.Children, Info{
+						Description: "Legacy signature (RPM v3)",
+						Attributes:  rpmSignatureAttributes(sig),
+					})
+				}
+			}
+
+			if !foundSig {
+				info.Attributes = append(info.Attributes, Attribute{"Signature", "none"})
+			}
+		}
+	}
 	return info, nil
 }
 

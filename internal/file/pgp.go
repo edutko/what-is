@@ -2,6 +2,7 @@ package file
 
 import (
 	"bytes"
+	"crypto"
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"encoding/hex"
@@ -9,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/edutko/decipher/internal/names"
 	"github.com/edutko/decipher/internal/openpgp/armor"
 	"github.com/edutko/decipher/internal/openpgp/packet"
 )
@@ -80,4 +82,19 @@ func gpgSignatureAttributes(s *packet.Signature, keyCreationTime time.Time) []At
 		attrs = append(attrs, Attribute{"Expires", "never"})
 	}
 	return attrs
+}
+
+func gpgAlgorithmName(a packet.PublicKeyAlgorithm, h crypto.Hash) string {
+	switch a {
+	case packet.PubKeyAlgoDSA:
+		return names.DSA + "/" + h.String()
+	case packet.PubKeyAlgoECDSA:
+		return names.ECDSA
+	case packet.PubKeyAlgoEdDSA:
+		return names.EdDSA
+	case packet.PubKeyAlgoRSA, packet.PubKeyAlgoRSASignOnly:
+		return names.RSA + "/" + h.String()
+	default:
+		return "unknown"
+	}
 }

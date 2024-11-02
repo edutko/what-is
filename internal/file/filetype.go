@@ -12,6 +12,7 @@ var filetypes = []filetype{
 	{nil, []string{"PuTTY-User-Key-File-2:", "PuTTY-User-Key-File-3:"}, nil, PuttyPPK},
 	{nil, []string{"\xCE\xCE\xCE\xCE"}, nil, JCEKeystore},
 	{nil, []string{"\xFE\xED\xFE\xED"}, nil, JavaKeystore},
+	{nil, []string{"\xED\xAB\xEE\xDB"}, nil, RPMFile},
 	{nil, []string{ssh1.Header}, nil, SSH1PrivateKey},
 	{nil, []string{"-----BEGIN PGP PUBLIC KEY BLOCK-----"}, nil, PGPPublicKey},
 	{nil, []string{"-----BEGIN PGP PRIVATE KEY BLOCK-----"}, nil, PGPPrivateKey},
