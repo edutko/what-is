@@ -100,8 +100,6 @@ func inspectStdin() {
 	if err != nil {
 		log.Printf("error processing input: %v", err)
 	}
-
-	fmt.Printf("%s: ", info.Path)
 	printInfo(info, 0)
 }
 
