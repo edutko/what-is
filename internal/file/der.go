@@ -42,13 +42,10 @@ func parseCertificate(der []byte) (Info, error) {
 	if err != nil {
 		return UnknownASN1Data, err
 	}
+	return getCertificateInfo(c)
+}
 
-	var pubKeyInfo asn1struct.PKIXPublicKey
-	_, err = asn1.Unmarshal(c.RawSubjectPublicKeyInfo, &pubKeyInfo)
-	if err != nil {
-		return UnknownASN1Data, err
-	}
-
+func getCertificateInfo(c *x509.Certificate) (Info, error) {
 	desc := fmt.Sprintf("x.509v%d", c.Version)
 	if c.BasicConstraintsValid {
 		if c.IsCA {
@@ -64,12 +61,17 @@ func parseCertificate(der []byte) (Info, error) {
 		Attributes: []Attribute{
 			{"Serial", c.SerialNumber.String()},
 		},
-		Children: []Info{
+	}
+
+	var pubKeyInfo asn1struct.PKIXPublicKey
+	_, err := asn1.Unmarshal(c.RawSubjectPublicKeyInfo, &pubKeyInfo)
+	if err == nil {
+		info.Children = []Info{
 			{
 				Description: "Public key",
 				Attributes:  pkixPublicKeyAttributes(pubKeyInfo),
 			},
-		},
+		}
 	}
 
 	info.Attributes = append(info.Attributes, Attribute{"Subject", c.Subject.String()})
