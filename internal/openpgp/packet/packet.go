@@ -24,7 +24,7 @@ import (
 
 	"golang.org/x/crypto/cast5"
 
-	"github.com/edutko/what-is/internal/openpgp/errors"
+	"github.com/edutko/decipher/internal/openpgp/errors"
 )
 
 // readFull is the same as io.ReadFull except that reading zero bytes returns

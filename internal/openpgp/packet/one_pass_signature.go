@@ -10,8 +10,8 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/edutko/what-is/internal/openpgp/errors"
-	"github.com/edutko/what-is/internal/openpgp/s2k"
+	"github.com/edutko/decipher/internal/openpgp/errors"
+	"github.com/edutko/decipher/internal/openpgp/s2k"
 )
 
 // OnePassSignature represents a one-pass signature packet. See RFC 4880,

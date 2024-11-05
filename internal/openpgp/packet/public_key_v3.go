@@ -16,7 +16,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/edutko/what-is/internal/openpgp/errors"
+	"github.com/edutko/decipher/internal/openpgp/errors"
 )
 
 // PublicKeyV3 represents older, version 3 public keys. These keys are less secure and

@@ -11,7 +11,7 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/edutko/what-is/internal/openpgp/errors"
+	"github.com/edutko/decipher/internal/openpgp/errors"
 )
 
 // Compressed represents a compressed OpenPGP packet. The decompressed contents

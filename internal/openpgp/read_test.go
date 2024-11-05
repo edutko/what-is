@@ -12,8 +12,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/edutko/what-is/internal/openpgp/armor"
-	"github.com/edutko/what-is/internal/openpgp/errors"
+	"github.com/edutko/decipher/internal/openpgp/armor"
+	"github.com/edutko/decipher/internal/openpgp/errors"
 )
 
 func readerFromHex(s string) io.Reader {

@@ -18,7 +18,7 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/edutko/what-is/internal/openpgp/errors"
+	"github.com/edutko/decipher/internal/openpgp/errors"
 )
 
 // Config collects configuration parameters for s2k key-stretching

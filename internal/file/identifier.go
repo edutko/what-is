@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/edutko/what-is/internal/util"
+	"github.com/edutko/decipher/internal/util"
 )
 
 type Identifier func(name string, data []byte, fileSize int64) bool

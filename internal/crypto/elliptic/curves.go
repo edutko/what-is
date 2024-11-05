@@ -8,9 +8,9 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/edutko/what-is/internal/asn1struct"
-	"github.com/edutko/what-is/internal/names"
-	"github.com/edutko/what-is/internal/oid"
+	"github.com/edutko/decipher/internal/asn1struct"
+	"github.com/edutko/decipher/internal/names"
+	"github.com/edutko/decipher/internal/oid"
 )
 
 func CurveNameFromParameters(p asn1struct.ECParameters) string {

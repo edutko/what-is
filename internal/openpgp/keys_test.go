@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/edutko/what-is/internal/openpgp/errors"
-	"github.com/edutko/what-is/internal/openpgp/packet"
+	"github.com/edutko/decipher/internal/openpgp/errors"
+	"github.com/edutko/decipher/internal/openpgp/packet"
 )
 
 func TestKeyExpiry(t *testing.T) {

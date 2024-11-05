@@ -12,8 +12,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/edutko/what-is/internal/openpgp/errors"
-	"github.com/edutko/what-is/internal/openpgp/s2k"
+	"github.com/edutko/decipher/internal/openpgp/errors"
+	"github.com/edutko/decipher/internal/openpgp/s2k"
 )
 
 // SignatureV3 represents older version 3 signatures. These signatures are less secure

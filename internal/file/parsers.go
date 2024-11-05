@@ -14,10 +14,10 @@ import (
 	"github.com/google/uuid"
 	"golang.org/x/crypto/ssh"
 
-	"github.com/edutko/what-is/internal/openpgp"
-	"github.com/edutko/what-is/internal/openpgp/packet"
-	"github.com/edutko/what-is/internal/ssh1"
-	"github.com/edutko/what-is/internal/util"
+	"github.com/edutko/decipher/internal/openpgp"
+	"github.com/edutko/decipher/internal/openpgp/packet"
+	"github.com/edutko/decipher/internal/ssh1"
+	"github.com/edutko/decipher/internal/util"
 )
 
 type Parser func(info Info, data []byte) (Info, error)

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/edutko/what-is/internal/oid"
+	"github.com/edutko/decipher/internal/oid"
 )
 
 const (

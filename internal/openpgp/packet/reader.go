@@ -7,7 +7,7 @@ package packet
 import (
 	"io"
 
-	"github.com/edutko/what-is/internal/openpgp/errors"
+	"github.com/edutko/decipher/internal/openpgp/errors"
 )
 
 // Reader reads packets from an io.Reader and allows packets to be 'unread' so

@@ -1,7 +1,7 @@
 package file
 
 import (
-	"github.com/edutko/what-is/internal/asn1struct"
+	"github.com/edutko/decipher/internal/asn1struct"
 )
 
 func parseASN1Data(b []byte) Info {

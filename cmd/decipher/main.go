@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/edutko/what-is/internal/file"
+	"github.com/edutko/decipher/internal/file"
 )
 
 const usage = `Usage:

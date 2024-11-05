@@ -11,10 +11,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/edutko/what-is/internal/openpgp/armor"
-	"github.com/edutko/what-is/internal/openpgp/errors"
-	"github.com/edutko/what-is/internal/openpgp/packet"
-	"github.com/edutko/what-is/internal/openpgp/s2k"
+	"github.com/edutko/decipher/internal/openpgp/armor"
+	"github.com/edutko/decipher/internal/openpgp/errors"
+	"github.com/edutko/decipher/internal/openpgp/packet"
+	"github.com/edutko/decipher/internal/openpgp/s2k"
 )
 
 // DetachSign signs message with the private key from signer (which must

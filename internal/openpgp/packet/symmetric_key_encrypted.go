@@ -10,8 +10,8 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/edutko/what-is/internal/openpgp/errors"
-	"github.com/edutko/what-is/internal/openpgp/s2k"
+	"github.com/edutko/decipher/internal/openpgp/errors"
+	"github.com/edutko/decipher/internal/openpgp/s2k"
 )
 
 // This is the largest session key that we'll support. Since no 512-bit cipher

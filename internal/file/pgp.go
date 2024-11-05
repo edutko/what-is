@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/edutko/what-is/internal/openpgp/armor"
-	"github.com/edutko/what-is/internal/openpgp/packet"
+	"github.com/edutko/decipher/internal/openpgp/armor"
+	"github.com/edutko/decipher/internal/openpgp/packet"
 )
 
 func readArmoredPGPData(b []byte) (*armor.Block, error) {

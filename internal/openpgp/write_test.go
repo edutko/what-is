@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/edutko/what-is/internal/openpgp/packet"
+	"github.com/edutko/decipher/internal/openpgp/packet"
 )
 
 func TestSignDetached(t *testing.T) {

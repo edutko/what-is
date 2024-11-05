@@ -26,9 +26,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/edutko/what-is/internal/openpgp/armor"
-	"github.com/edutko/what-is/internal/openpgp/errors"
-	"github.com/edutko/what-is/internal/openpgp/packet"
+	"github.com/edutko/decipher/internal/openpgp/armor"
+	"github.com/edutko/decipher/internal/openpgp/errors"
+	"github.com/edutko/decipher/internal/openpgp/packet"
 )
 
 // A Block represents a clearsigned message. A signature on a Block can

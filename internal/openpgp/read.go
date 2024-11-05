@@ -18,9 +18,9 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/edutko/what-is/internal/openpgp/armor"
-	"github.com/edutko/what-is/internal/openpgp/errors"
-	"github.com/edutko/what-is/internal/openpgp/packet"
+	"github.com/edutko/decipher/internal/openpgp/armor"
+	"github.com/edutko/decipher/internal/openpgp/errors"
+	"github.com/edutko/decipher/internal/openpgp/packet"
 )
 
 // SignatureType is the armor type for a PGP signature.

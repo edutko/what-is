@@ -38,24 +38,24 @@ jobs:
           GOARCH: ${{ matrix.GOARCH }}
         run: |
           DIR="$(mktemp -d)"
-          mkdir "$DIR/what-is"
+          mkdir "$DIR/decipher"
           VERSION="$(git describe --tags)"
-          go build -o "$DIR/what-is" -ldflags "-X main.Version=$VERSION" -trimpath ./cmd/...
-          cp LICENSE "$DIR/what-is/LICENSE"
-          echo -e "\n---\n" >> "$DIR/what-is/LICENSE"
-          curl -L "https://go.dev/LICENSE?m=text" >> "$DIR/what-is/LICENSE"
+          go build -o "$DIR/decipher" -ldflags "-X main.Version=$VERSION" -trimpath ./cmd/...
+          cp LICENSE "$DIR/decipher/LICENSE"
+          echo -e "\n---\n" >> "$DIR/decipher/LICENSE"
+          curl -L "https://go.dev/LICENSE?m=text" >> "$DIR/decipher/LICENSE"
           if [ "$GOOS" == "windows" ]; then
-            ( cd "$DIR"; zip what-is-$VERSION-$GOOS-$GOARCH.zip -r what-is )
-            mv "$DIR/what-is-$VERSION-$GOOS-$GOARCH.zip" .
+            ( cd "$DIR"; zip decipher-$VERSION-$GOOS-$GOARCH.zip -r decipher )
+            mv "$DIR/decipher-$VERSION-$GOOS-$GOARCH.zip" .
           else
-            tar -cvzf "what-is-$VERSION-$GOOS-$GOARCH.tar.gz" -C "$DIR" what-is
+            tar -cvzf "decipher-$VERSION-$GOOS-$GOARCH.tar.gz" -C "$DIR" decipher
           fi
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: what-is-${{ matrix.GOOS }}-${{ matrix.GOARCH }}
-          path: what-is-*-${{ matrix.GOOS }}-${{ matrix.GOARCH }}.*
+          name: decipher-${{ matrix.GOOS }}-${{ matrix.GOARCH }}
+          path: decipher-*-${{ matrix.GOOS }}-${{ matrix.GOARCH }}.*
 
   publish:
     name: Upload release binaries
@@ -69,11 +69,11 @@ jobs:
       - name: Download workflow artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: what-is-*
+          pattern: decipher-*
           merge-multiple: true
 
       - name: Upload release artifacts
-        run: gh release upload "$GITHUB_REF_NAME" what-is-*
+        run: gh release upload "$GITHUB_REF_NAME" decipher-*
         env:
           GH_REPO: ${{ github.repository }}
           GH_TOKEN: ${{ github.token }}

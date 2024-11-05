@@ -10,8 +10,8 @@ import (
 	"io"
 	"testing"
 
-	"github.com/edutko/what-is/internal/openpgp"
-	"github.com/edutko/what-is/internal/openpgp/packet"
+	"github.com/edutko/decipher/internal/openpgp"
+	"github.com/edutko/decipher/internal/openpgp/packet"
 )
 
 func testParse(t *testing.T, input []byte, expected, expectedPlaintext string) {

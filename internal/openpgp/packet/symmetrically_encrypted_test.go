@@ -11,7 +11,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/edutko/what-is/internal/openpgp/errors"
+	"github.com/edutko/decipher/internal/openpgp/errors"
 )
 
 // TestReader wraps a []byte and returns reads of a specific length.

@@ -18,7 +18,7 @@ import (
 	"encoding/base64"
 	"io"
 
-	"github.com/edutko/what-is/internal/openpgp/errors"
+	"github.com/edutko/decipher/internal/openpgp/errors"
 )
 
 // A Block represents an OpenPGP armored structure.

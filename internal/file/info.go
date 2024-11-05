@@ -7,7 +7,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/edutko/what-is/internal/units"
+	"github.com/edutko/decipher/internal/units"
 )
 
 type Info struct {

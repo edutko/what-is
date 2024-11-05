@@ -11,7 +11,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/edutko/what-is/internal/openpgp/armor"
+	"github.com/edutko/decipher/internal/openpgp/armor"
 )
 
 func TestSignatureV3Read(t *testing.T) {

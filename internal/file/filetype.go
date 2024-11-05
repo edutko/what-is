@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/edutko/what-is/internal/ssh1"
+	"github.com/edutko/decipher/internal/ssh1"
 )
 
 var filetypes = []filetype{

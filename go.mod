@@ -1,4 +1,4 @@
-module github.com/edutko/what-is
+module github.com/edutko/decipher
 
 go 1.20
 

@@ -18,9 +18,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/edutko/what-is/internal/openpgp/elgamal"
-	"github.com/edutko/what-is/internal/openpgp/errors"
-	"github.com/edutko/what-is/internal/openpgp/s2k"
+	"github.com/edutko/decipher/internal/openpgp/elgamal"
+	"github.com/edutko/decipher/internal/openpgp/errors"
+	"github.com/edutko/decipher/internal/openpgp/s2k"
 )
 
 // PrivateKey represents a possibly encrypted private key. See RFC 4880,

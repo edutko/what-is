@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/edutko/what-is/internal/names"
+	"github.com/edutko/decipher/internal/names"
 )
 
 func ParseRaw(data []byte) ([]Raw, error) {

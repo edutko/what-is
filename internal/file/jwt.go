@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/edutko/what-is/internal/names"
-	"github.com/edutko/what-is/internal/util"
+	"github.com/edutko/decipher/internal/names"
+	"github.com/edutko/decipher/internal/util"
 )
 
 type JWT struct {
