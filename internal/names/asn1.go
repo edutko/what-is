@@ -5,6 +5,15 @@ import (
 	"fmt"
 )
 
+func FromAsn1Tag(class, tag int) string {
+	if class == asn1.ClassUniversal {
+		if s, found := tags[tag]; found {
+			return s
+		}
+	}
+	return fmt.Sprintf("%d", tag)
+}
+
 var tags = map[int]string{
 	1:  "BOOLEAN",
 	2:  "INTEGER",
@@ -39,13 +48,4 @@ var tags = map[int]string{
 	32: "TIME-OF-DAY",
 	33: "DATE-TIME",
 	34: "DURATION",
-}
-
-func FromAsn1Tag(class, tag int) string {
-	if class == asn1.ClassUniversal {
-		if s, found := tags[tag]; found {
-			return s
-		}
-	}
-	return fmt.Sprintf("%d", tag)
 }

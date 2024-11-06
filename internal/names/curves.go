@@ -31,6 +31,49 @@ const (
 	Ed448     = "Ed448"
 )
 
+const curveUnknown = "unknown curve"
+
+func FromCurveParams(params *elliptic.CurveParams) string {
+	if params.Name == "" {
+		// TODO: attempt to match parameters to named curve
+		return curveUnknown
+	}
+
+	return Curve(params.Name)
+}
+
+func Curve(name string) string {
+	if name == "" {
+		return curveUnknown
+	}
+
+	for _, c := range namedCurves {
+		if c.matches(name) {
+			return c.String()
+		}
+	}
+
+	return curveUnknown
+}
+
+func CurveNameFromOID(id asn1.ObjectIdentifier) string {
+	if name, ok := namedCurvesByOid[id.String()]; ok {
+		return name
+	}
+	return id.String()
+}
+
+func FieldTypeFromOid(id asn1.ObjectIdentifier) string {
+	switch id.String() {
+	case oid.PrimeField.String():
+		return "prime field"
+	case oid.CharacteristicTwoField.String():
+		return "characteristic 2 field"
+	default:
+		return id.String()
+	}
+}
+
 type curveNames []string
 
 func (c curveNames) matches(name string) bool {
@@ -50,8 +93,6 @@ func (c curveNames) String() string {
 		return fmt.Sprintf("%s (%s)", c[0], strings.Join(c[1:], ", "))
 	}
 }
-
-const curveUnknown = "unknown curve"
 
 var namedCurves = []curveNames{
 	{"P-192", "secp192r1", "prime192v1"},
@@ -77,29 +118,6 @@ var namedCurves = []curveNames{
 	{"sect571r1"},
 }
 
-func FromCurveParams(params *elliptic.CurveParams) string {
-	if params.Name == "" {
-		// TODO: attempt to match parameters to named curve
-		return curveUnknown
-	}
-
-	return Curve(params.Name)
-}
-
-func Curve(name string) string {
-	if name == "" {
-		return curveUnknown
-	}
-
-	for _, c := range namedCurves {
-		if c.matches(name) {
-			return c.String()
-		}
-	}
-
-	return curveUnknown
-}
-
 var namedCurvesByOid = map[string]string{
 	oid.Secp192r1.String(): Secp192r1,
 	oid.Sect163k1.String(): Sect163k1,
@@ -121,22 +139,4 @@ var namedCurvesByOid = map[string]string{
 	oid.X448.String():    X448,
 	oid.Ed25519.String(): Ed25519,
 	oid.Ed448.String():   Ed448,
-}
-
-func CurveNameFromOID(id asn1.ObjectIdentifier) string {
-	if name, ok := namedCurvesByOid[id.String()]; ok {
-		return name
-	}
-	return id.String()
-}
-
-func FieldTypeFromOid(id asn1.ObjectIdentifier) string {
-	switch id.String() {
-	case oid.PrimeField.String():
-		return "prime field"
-	case oid.CharacteristicTwoField.String():
-		return "characteristic 2 field"
-	default:
-		return id.String()
-	}
 }

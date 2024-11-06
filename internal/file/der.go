@@ -74,12 +74,12 @@ func getCertificateInfo(c *x509.Certificate) (Info, error) {
 		}
 	}
 
-	info.Attributes = append(info.Attributes, Attribute{"Subject", c.Subject.String()})
+	info.Attributes = append(info.Attributes, Attribute{"Subject", names.FromRawDN(c.RawSubject)})
 	if len(c.SubjectKeyId) > 0 {
 		info.Attributes = append(info.Attributes, Attribute{"Subject key id", hex.EncodeToString(c.SubjectKeyId)})
 	}
 
-	info.Attributes = append(info.Attributes, Attribute{"Issuer", c.Issuer.String()})
+	info.Attributes = append(info.Attributes, Attribute{"Issuer", names.FromRawDN(c.RawIssuer)})
 	if len(c.AuthorityKeyId) > 0 {
 		info.Attributes = append(info.Attributes, Attribute{"Authority key id", hex.EncodeToString(c.AuthorityKeyId)})
 	}
