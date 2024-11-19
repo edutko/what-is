@@ -168,6 +168,58 @@ func x509EKUs(ekus []x509.ExtKeyUsage, unknownEKUs []asn1.ObjectIdentifier) []st
 	return ss
 }
 
+func parseCSR(der []byte) (Info, error) {
+	c, err := x509.ParseCertificateRequest(der)
+	if err != nil {
+		return UnknownASN1Data, err
+	}
+	return getCSRInfo(c)
+}
+
+func getCSRInfo(c *x509.CertificateRequest) (Info, error) {
+	info := Info{
+		Description: fmt.Sprintf("x.509v%d certificate request", c.Version),
+	}
+
+	var pubKeyInfo asn1struct.PKIXPublicKey
+	_, err := asn1.Unmarshal(c.RawSubjectPublicKeyInfo, &pubKeyInfo)
+	if err == nil {
+		info.Children = []Info{
+			{
+				Description: "Public key",
+				Attributes:  pkixPublicKeyAttributes(pubKeyInfo),
+			},
+		}
+	}
+
+	info.Attributes = append(info.Attributes, Attribute{"Subject", names.FromRawDN(c.RawSubject)})
+
+	var sans []string
+	for _, san := range c.DNSNames {
+		sans = append(sans, san)
+	}
+
+	for _, san := range c.IPAddresses {
+		sans = append(sans, san.String())
+	}
+
+	for _, san := range c.URIs {
+		sans = append(sans, san.String())
+	}
+
+	for _, san := range c.EmailAddresses {
+		sans = append(sans, san)
+	}
+
+	if len(sans) > 0 {
+		info.Attributes = append(info.Attributes, Attribute{"SANs", strings.Join(sans, ", ")})
+	}
+
+	info.Attributes = append(info.Attributes, Attribute{"Signature algorithm", c.SignatureAlgorithm.String()})
+
+	return info, nil
+}
+
 func parsePKCS1PublicKey(der []byte) (Info, error) {
 	info := Info{
 		Description: "PKCS#1 public key",
