@@ -91,7 +91,7 @@ func PEMFile(info Info, data []byte) (Info, error) {
 	var blockInfos []Info
 	for rest := data; len(rest) > 0; {
 		var b *pem.Block
-		b, rest = pem.Decode(rest)
+		b, rest = pem.Decode(skipToPEMBlock(rest))
 		if b == nil {
 			return info, fmt.Errorf("failed to parse PEM data")
 		}
@@ -113,6 +113,14 @@ func PEMFile(info Info, data []byte) (Info, error) {
 	}
 
 	return info, fmt.Errorf("no valid PEM blocks in file")
+}
+
+func skipToPEMBlock(data []byte) []byte {
+	idx := bytes.Index(data, []byte("-----BEGIN "))
+	if idx == -1 {
+		return nil
+	}
+	return data[idx:]
 }
 
 func PGPPrivateKey(info Info, data []byte) (Info, error) {

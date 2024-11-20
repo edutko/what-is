@@ -26,6 +26,7 @@ var filetypes = []filetype{
 	{nil, nil, IsASN1, ASN1File},
 	{nil, nil, IsBase64ASN1, Base64ASN1File},
 	{nil, nil, IsJWT, JWTData},
+	{nil, nil, IsMixedPEM, PEMFile},
 }
 
 type filetype struct {

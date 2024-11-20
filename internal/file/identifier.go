@@ -1,6 +1,7 @@
 package file
 
 import (
+	"bytes"
 	"encoding/asn1"
 	"strings"
 
@@ -37,6 +38,12 @@ func IsJWT(_ string, data []byte, _ int64) bool {
 		return false
 	}
 	return true
+}
+
+func IsMixedPEM(_ string, data []byte, _ int64) bool {
+	start := bytes.Index(data, []byte("-----BEGIN"))
+	end := bytes.Index(data, []byte("-----END"))
+	return start >= 0 && end > start
 }
 
 func IsUUID(_ string, data []byte, _ int64) bool {
