@@ -89,13 +89,14 @@ func JWTData(info Info, data []byte) (Info, error) {
 
 func PEMFile(info Info, data []byte) (Info, error) {
 	var blockInfos []Info
-	for rest := data; len(rest) > 0; {
+	for rest := skipToPEMBlock(data); len(rest) > 0; {
 		var b *pem.Block
-		b, rest = pem.Decode(skipToPEMBlock(rest))
+		b, rest = pem.Decode(rest)
 		if b == nil {
-			return info, fmt.Errorf("failed to parse PEM data")
+			break
 		}
 		blockInfos = append(blockInfos, parsePEMBlock(b))
+		rest = skipToPEMBlock(rest)
 	}
 
 	if len(blockInfos) == 1 {
@@ -112,7 +113,7 @@ func PEMFile(info Info, data []byte) (Info, error) {
 		return info, nil
 	}
 
-	return info, fmt.Errorf("no valid PEM blocks in file")
+	return info, fmt.Errorf("no valid PEM blocks")
 }
 
 func skipToPEMBlock(data []byte) []byte {
